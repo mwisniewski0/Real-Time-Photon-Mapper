@@ -1,2 +1,2 @@
-# renderer
+# Real Time Photon Mapper
 Stuff
