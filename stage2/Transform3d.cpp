@@ -1,5 +1,6 @@
 #include "Transform3d.h"
 #include <exception>
+#include <stdexcept>
 
 float Transform3D::getAffineVectorCoord(const glm::vec3& vector, int index)
 {
@@ -14,7 +15,7 @@ float Transform3D::getAffineVectorCoord(const glm::vec3& vector, int index)
 	case 3:
 		return 1.0;
 	}
-	throw std::exception("Index out of bounds");
+	throw std::runtime_error("Index out of bounds");
 }
 
 glm::vec3 Transform3D::transform(const glm::vec3& toTransform)

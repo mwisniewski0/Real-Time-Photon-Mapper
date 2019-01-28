@@ -1,5 +1,6 @@
 #include "GlHelp.h"
 #include <string>
+#include <memory>
 
 namespace glhelp {
 

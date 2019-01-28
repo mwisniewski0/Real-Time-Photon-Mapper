@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 #include <array>
 
-
 /**
  * Transform3D is a very simple to use class for performing 3D transformations on points in 3-space.
  */

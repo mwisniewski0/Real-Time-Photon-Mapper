@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include "Transform3d.h"
+#include <memory>
 
 glm::vec3 Camera::vectorToScreen()
 {
@@ -37,9 +38,9 @@ glhelp::CameraInfo Camera::getGlslInfo()
 	glhelp::CameraInfo result;
 	result.eyePos = position;
 
-	auto distanceToScreen = glm::length(vectorToScreen());
-	auto horizontalStretch = distanceToScreen * tan(fovX / 2.f) * rightDir;
-	auto verticalStretch = distanceToScreen * tan(fovY / 2.f) * upDir;
+	float distanceToScreen = glm::length(vectorToScreen());
+	auto horizontalStretch = distanceToScreen * tanf(fovX / 2.f) * rightDir;
+	auto verticalStretch = distanceToScreen * tanf(fovY / 2.f) * upDir;
 
 	result.screenBottomLeft = lookingAt - horizontalStretch - verticalStretch;
 	result.screenBottomRight = lookingAt + horizontalStretch - verticalStretch;

@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 		config.fragShaderPath = "./tracer.frag";
 		config.vtxShaderPath = "./tracer.vert";
 		config.windowTitle = "Photon";
-		config.horizontalFovDegrees = 75.f;
+		config.horizontalFovDegrees = 45.f;
 
 		Renderer renderer(config);
 		renderer.run();
