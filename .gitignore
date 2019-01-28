@@ -41,3 +41,10 @@ x64
 *.exe
 *.out
 *.app
+
+
+# External Libraries
+external_libs/
+
+#CMake ignores
+cmake-build-debug/
