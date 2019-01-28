@@ -9,7 +9,7 @@ uniform vec3 cameraBottomRight;
 uniform vec3 cameraEyePos;
 
 
-const float EPSILON = 0.000001;
+const float EPSILON = 0.0001;
 
 struct Material {
     vec4 color;
