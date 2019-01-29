@@ -3,6 +3,7 @@
 #include "Helpers.h"
 #include "Geometry.h"
 #include <glm/detail/func_trigonometric.inl>
+#include <iostream>
 
 
 // Photon-defined SDL messages
@@ -28,6 +29,18 @@ void UserMovementInfo::updateCamera(Camera* camera)
 	{
 		camera->moveRight(0.02);
 	}
+}
+
+void FpsCounter::secondPassed()
+{
+	int FPS = framesRendered - lastFrame;
+	std::cout << FPS << "\n";
+	lastFrame = framesRendered;
+}
+
+void FpsCounter::frameRendered()
+{
+	framesRendered += 1;
 }
 
 void Renderer::pushCameraInfoToGPU()
@@ -302,11 +315,13 @@ void Renderer::loop()
 					pushCameraInfoToGPU();
 					break;
 				case FPS_COUNTER_TIMER:
+					fpsCounter.secondPassed();
 					break;
 				}
 			}
 		}
 		renderFrame();
+		fpsCounter.frameRendered();
 	}
 }
 

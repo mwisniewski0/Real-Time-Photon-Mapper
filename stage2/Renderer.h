@@ -31,6 +31,16 @@ struct UserMovementInfo
 	void updateCamera(Camera* camera);
 };
 
+class FpsCounter
+{
+	int framesRendered = 0;
+	int lastFrame = 0;
+
+public:
+	void secondPassed();
+	void frameRendered();
+};
+
 class Renderer
 {
 	RendererConfig config;
@@ -41,6 +51,7 @@ class Renderer
 
 	std::unique_ptr<Camera> camera;
 	UserMovementInfo userInputState;
+	FpsCounter fpsCounter;
 
 	void pushCameraInfoToGPU();
 	void initGL();
