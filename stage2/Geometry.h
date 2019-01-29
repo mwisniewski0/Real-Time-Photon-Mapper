@@ -11,11 +11,11 @@ struct vec4 {
 struct Material {
 	vec4 color;
 	vec4 specularReflectivity;
-	int type; // 0 diffuse, 1 specular
+	float refractiveIndex;
+	int type; // 0 diffuse, 1 specular, 2 refractive
 
 	int padding1;
 	int padding2;
-	int padding3;
 };
 
 struct Triangle {
