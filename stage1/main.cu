@@ -7,7 +7,7 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
-#include "cutil_math.h"
+#include "helper_math.h"
 
 #define WIDTH 500
 #define HEIGHT 500
