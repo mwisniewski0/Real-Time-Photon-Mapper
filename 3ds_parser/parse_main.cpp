@@ -2,7 +2,7 @@
 // Created by Beau Carlborg on 2019-01-28.
 //
 
-#include "main.h"
+#include "parse_main.h"
 #include <stdio.h>
 #include <zconf.h>
 #include <cstdlib>
@@ -57,8 +57,6 @@ void copy_verticies(float *src, float *dst) {
     }
 }
 
-
-
 flat_triangle *create_flat_geometry_array(Lib3dsFile *f, int total_triangles_count) {
     int i, j, k, curr_flat_triangle_index = 0;
 
@@ -66,6 +64,7 @@ flat_triangle *create_flat_geometry_array(Lib3dsFile *f, int total_triangles_cou
 
     for (i = 0; i < f->nmeshes; i++) {
         Lib3dsMesh *curr_mesh = f->meshes[i];
+
 
         for (j=0; j<curr_mesh->nfaces; j++) {
             Lib3dsFace curr_face = curr_mesh->faces[j];
@@ -93,12 +92,6 @@ int main(int argc, char **argv) {
 
     flat_triangle *triangles_array = create_flat_geometry_array(new_file, total_triangles);
 
-    for(int i = 0; i < 100; i++) {
-        printf("Triangle: %d\n", i);
-        printf("\tv3x: %f, v3y: %f, v3z: %f\n", triangles_array[i].verticies[2][0], triangles_array[i].verticies[2][1], triangles_array[i].verticies[2][2]);
-        printf("\tv1x: %f, v1y: %f, v1z: %f\n", triangles_array[i].verticies[0][0], triangles_array[i].verticies[0][1], triangles_array[i].verticies[0][2]);
-        printf("\tv2x: %f, v2y: %f, v2z: %f\n", triangles_array[i].verticies[1][0], triangles_array[i].verticies[1][1], triangles_array[i].verticies[1][2]);
-    }
 
     return 0;
 }

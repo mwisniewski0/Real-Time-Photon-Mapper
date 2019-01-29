@@ -25,6 +25,11 @@ int calculate_total_verticies(Lib3dsFile *f);
 void copy_verticies(float *src, float *dst);
 
 
+// TODO: get total list of verticies
+//
+//float *generate_verticies_array(Lib3dsFile *f);
+
+
 
 
 
