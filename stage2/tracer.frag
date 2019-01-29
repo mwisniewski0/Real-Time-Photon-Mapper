@@ -10,15 +10,16 @@ uniform vec3 cameraEyePos;
 
 
 const float EPSILON = 0.0001;
+const float AIR_REFRACTIVE_INDEX = 1;
 
 struct Material {
     vec4 color;
     vec4 specularReflectivity;
-    int type; // 0 diffuse, 1 specular
+	float refractiveIndex;
+    int type; // 0 diffuse, 1 specular, 2 refractive
 
 	int padding1;
 	int padding2;
-	int padding3;
 };
 
 struct Triangle {
@@ -37,9 +38,9 @@ struct Sphere {
 // Currently, spheres are only planned to be used for the demo, and will be removed in further
 // iterations.
 Sphere[3] spheres = Sphere[3](
-	Sphere(vec4(-0.5,0.3,0,0), 0.2, Material(vec4(0), vec4(0.77, 0.83, 0.81, 0), 1, 0,0,0)),
-	Sphere(vec4(0,-0.3,0,0), 0.2, Material(vec4(0), vec4(0.77, 0.83, 0.81, 0), 1, 0,0,0)),
-	Sphere(vec4(0.5,0.3,0,0), 0.2, Material(vec4(0), vec4(0.77, 0.83, 0.81, 0), 1, 0,0,0))
+	Sphere(vec4(-0.5,0.3,0,0), 0.2, Material(vec4(0), vec4(0.77, 0.83, 0.81, 0), 2.5, 1, 0,0)),
+	Sphere(vec4(0,-0.3,0,0), 0.2, Material(vec4(0), vec4(0.77, 0.83, 0.81, 0), 2.5, 2, 0,0)),
+	Sphere(vec4(0.5,0.3,0,0), 0.2, Material(vec4(0), vec4(0.77, 0.83, 0.81, 0), 2.5, 1, 0,0))
 );
 
 struct PointLightSource {
@@ -245,10 +246,23 @@ vec3 getRayColor(Ray ray) {
             currentModifier *= v3(hit.material.specularReflectivity);
             ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
             ray.dir = reflect(ray.dir, hit.normal);
+        } else if (hit.material.type == 2) {
+			// Refractive
+			if (dot(hit.normal, ray.dir) < 0) {
+				// Ray comes from the inside
+				currentModifier *= v3(hit.material.specularReflectivity);
+				ray.origin = hit.pointOfHit + (-hit.normal * EPSILON);
+				ray.dir = refract(ray.dir, hit.normal, 1.0/hit.material.refractiveIndex);
+			} else {
+				// Ray comes from the outside
+				currentModifier *= v3(hit.material.specularReflectivity);
+				ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
+				ray.dir = refract(ray.dir, -hit.normal, 1.0/hit.material.refractiveIndex);
+			}
         } else {
             // Diffuse
             return currentModifier * getHitIllumination(hit);
-        }
+		}
     }
 
     return vec3(0.0, 0.0, 0.0);

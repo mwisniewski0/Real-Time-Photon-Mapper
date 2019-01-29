@@ -44,3 +44,12 @@ x64
 
 # Test images
 *.ppm
+
+# External Libraries
+external_libs/
+
+#CMake ignores
+cmake-build-debug/
+
+#Directory of 3ds files to use for testing
+3ds_test_files/
