@@ -42,6 +42,8 @@ x64
 *.out
 *.app
 
+# Test images
+*.ppm
 
 # External Libraries
 external_libs/
@@ -51,6 +53,9 @@ cmake-build-debug/
 
 #Directory of 3ds files to use for testing
 3ds_test_files/
+<<<<<<< HEAD
 
 #ignoring this random drectory that beaus computer
 .idea/
+=======
+>>>>>>> e395699c781052ceaac070b543a91e7af9111112
