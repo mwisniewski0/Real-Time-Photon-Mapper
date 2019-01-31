@@ -14,6 +14,8 @@
 #define NUM_PHOTONS (1<<20)
 #define MAX_DEPTH 10
 
+enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
+
 struct Photon{
     float3 pos;
     float3 power;
@@ -26,8 +28,9 @@ struct PointLight{
 
 struct Triangle{
     float3 v0,v1,v2; //verticies
-    float3 color; //diffuse reflectance
-
+    float3 diffuse; //diffuse reflectance
+    float3 specular; //specular reflectance
+    
     //uses moller trumbore algorithm
     //returns intersection distance on line or -infinity if line doesn't hit
     __device__ float intersect(float3& point, float3& direction) const{
@@ -59,16 +62,21 @@ __constant__ PointLight pointLights[] = {
 
 //hard coded cornell box
 __constant__ Triangle triangles[] = {
-    {{-1,-1,-1},{1,-1,-1},{-1,-1,1},{0.9,0.9,0.9}},
-    {{1,-1,-1},{1,-1,1},{-1,-1,1},{0.9,0.9,0.9}},
-    {{-1,-1,-1},{-1,1,-1},{1,1,-1},{0.9,0.9,0.9}},
-    {{-1,-1,-1},{1,1,-1},{1,-1,-1},{0.9,0.9,0.9}},
-    {{-1,1,1},{1,1,1},{1,1,-1},{0.9,0.9,0.9}},
-    {{-1,1,1},{1,1,-1},{-1,1,-1},{0.9,0.9,0.9}},
-    {{-1,-1,1},{-1,1,1},{-1,1,-1},{0.9,0.2,0.2}},
-    {{-1,-1,1},{-1,1,-1},{-1,-1,-1},{0.9,0.2,0.2}},
-    {{1,-1,1},{1,1,-1},{1,1,1},{0.2,0.9,0.2}},
-    {{1,-1,1},{1,-1,-1},{1,1,-1},{0.2,0.9,0.2}}
+    //floor
+    {{-1,-1,-1},{1,-1,-1},{-1,-1,1},{0.9,0.9,0.9},{0,0,0}},
+    {{1,-1,-1},{1,-1,1},{-1,-1,1},{0.9,0.9,0.9},{0,0,0}},
+    //back
+    {{-1,-1,-1},{-1,1,-1},{1,1,-1},{0.9,0.9,0.9},{0,0,0}},
+    {{-1,-1,-1},{1,1,-1},{1,-1,-1},{0.9,0.9,0.9},{0,0,0}},
+    //ceiling
+    {{-1,1,1},{1,1,1},{1,1,-1},{0.2,0.2,0.9},{0,0,0}},
+    {{-1,1,1},{1,1,-1},{-1,1,-1},{0.2,0.2,0.9},{0,0,0}},
+    //left
+    {{-1,-1,1},{-1,1,1},{-1,1,-1},{0.0,0.0,0.0},{0.9,0.2,0.2}},
+    {{-1,-1,1},{-1,1,-1},{-1,-1,-1},{0.0,0.0,0.0},{0.9,0.2,0.2}},
+    //right
+    {{1,-1,1},{1,1,-1},{1,1,1},{0.0,0.0,0.0},{0.2,0.9,0.2}},
+    {{1,-1,1},{1,-1,-1},{1,1,-1},{0.0,0.0,0.0},{0.2,0.9,0.2}}
 };
 
 //trace photons and return array in photonList
@@ -87,6 +95,8 @@ __global__ void getPhotonsKernel(Photon* photonList){
     float3 color = make_float3(1,1,1);
     
     uint depth = MAX_DEPTH;
+
+    int count = 0;
     for (; depth--; ){
 	float t = 1e20;
 	uint triIdx = 0;
@@ -99,21 +109,40 @@ __global__ void getPhotonsKernel(Photon* photonList){
 	    }
 	}
 
+	float3 diffuse = triangles[triIdx].diffuse;
+	float3 specular = triangles[triIdx].specular;
+	float d_avg = (diffuse.x + diffuse.y + diffuse.z)/3;
+	float s_avg = (specular.x + specular.y + specular.z)/3;
+	float xi = curand_uniform(&randState);
+	ScatterType action;
+	if(xi < d_avg){
+	    action = DIFFUSE;
+	}
+	else if (xi < d_avg + s_avg){
+	    action = SPECULAR;
+	}
+	else{
+	    action = ABSORBED;
+	}
+
 	if (t < 1e19){
 	    origin+=direction*t;
-	    photonList[MAX_DEPTH*idx + depth].pos = origin;
-	    photonList[MAX_DEPTH*idx + depth].power = color*pointLights[0].power/NUM_PHOTONS;
+	    if (action == DIFFUSE || action == ABSORBED){
+		photonList[MAX_DEPTH*idx + count].pos = origin;
+		photonList[MAX_DEPTH*idx + count].power = color*pointLights[0].power/NUM_PHOTONS;
+		++count;
+	    }
 	}
 	else{ // hit nothing
 	    break;
 	}
-	float3 diffuse = triangles[triIdx].color;
-	float p_avg = (diffuse.x + diffuse.y + diffuse.z)/3;
-	float xi = curand_uniform(&randState);
-	if (xi < p_avg){
-	    float3 normal = cross(triangles[triIdx].v2 - triangles[triIdx].v0,
-				  triangles[triIdx].v1 - triangles[triIdx].v0);
-	    normal = normalize(normal);
+
+	float3 normal = cross(triangles[triIdx].v2 - triangles[triIdx].v0,
+			      triangles[triIdx].v1 - triangles[triIdx].v0);
+	normal = normalize(normal);
+	
+
+	if (action == DIFFUSE){
 	    cosPhi = curand_uniform(&randState);
 	    sinPhi = sqrtf(1-cosPhi*cosPhi);
 	    theta = curand_uniform(&randState)*2*M_PI;
@@ -128,12 +157,15 @@ __global__ void getPhotonsKernel(Photon* photonList){
 				  w*cosPhi);
 	    color*=diffuse;
 	}
+	else if(action == SPECULAR){
+	    direction = direction - 2*normal*dot(normal, direction);
+	    color*=specular;
+	}
 	else{//absorbed	    
 	    break;
 	}
-	uint num = MAX_DEPTH - depth;
-	for(uint i = MAX_DEPTH; i>depth; --i){
-	    photonList[MAX_DEPTH*idx + i-1].power/=num;
+	for(uint i = 0; i<count; ++i){
+	    photonList[MAX_DEPTH*idx + i].power/=count;
 	}
     }
 
@@ -177,7 +209,7 @@ int main(){
 
     std::vector<Photon> photonList_h(NUM_PHOTONS*MAX_DEPTH);
     Photon* photonList_d;
- 
+    
     cudaMalloc(&photonList_d, photonList_h.size()*sizeof(Photon));
     
     getPhotonsKernel<<<NUM_PHOTONS/64, 64>>>(photonList_d);
