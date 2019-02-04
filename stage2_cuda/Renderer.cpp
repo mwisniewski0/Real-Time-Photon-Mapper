@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include "BVH.h"
 #include "ply.h"
+#include "cudaRenderer.h"
 
 
 // Photon-defined SDL messages
@@ -75,7 +76,7 @@ void Renderer::initGL()
 	// TODO: consider whether we want double buffering or not. We only draw one rectangle, so we
 	// might not need the extra buffer.
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetSwapInterval(1);
+	SDL_GL_SetSwapInterval(0);
 
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -85,168 +86,203 @@ void Renderer::initGL()
 	glUseProgram(glProgramId);
 }
 
-void Renderer::loadModel()
+struct Triangle2
+{
+	float3 a, b, c;
+	Material material;
+
+	Triangle toTriangle()
+	{
+		return Triangle::from3Points(a, b, c, material);
+	}
+};
+
+Scene Renderer::loadModel()
 {
 	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
 	// is hardcoded (our model loading code is still in production).
 	
-//	std::vector<Triangle> triangles = loadTriangles("bun_zipper_res4.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
+	std::vector<Triangle> triangles; // = loadTriangles("bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
 
-	std::vector<Triangle> triangles(12);
+	Scene scene;
+
+	Triangle2 t;
+
 	// Back wall
-	triangles[0].a = { -1, 1, 1 };
-	triangles[0].b = { 1, 1, 1 };
-	triangles[0].c = { -1, -1, 1 };
-	triangles[0].material = {
+	t.a = { -1, 1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { -1, -1, 1 };
+	t.material = {
 		{ 1, 0, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0001 // type
 	};
-	triangles[1].a = { 1, 1, 1 };
-	triangles[1].b = { 1, -1, 1 };
-	triangles[1].c = { -1, -1, 1 };
-	triangles[1].material = {
+	triangles.push_back(t.toTriangle());
+
+	t.a = { 1, 1, 1 };
+	t.b = { 1, -1, 1 };
+	t.c = { -1, -1, 1 };
+	t.material = {
 		{ 1, 0, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0001 // type
 	};
+	triangles.push_back(t.toTriangle());
 
 	// Front wall
-	triangles[2].a = { -1, 1, -4 };
-	triangles[2].b = { 1, 1, -4 };
-	triangles[2].c = { -1, -1, -4 };
-	triangles[2].material = {
+	t.a = { -1, 1, -4 };
+	t.b = { 1, 1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
-	triangles[3].a = { 1, 1, -4 };
-	triangles[3].b = { 1, -1, -4 };
-	triangles[3].c = { -1, -1, -4 };
-	triangles[3].material = {
+	triangles.push_back(t.toTriangle());
+
+	t.a = { 1, 1, -4 };
+	t.b = { 1, -1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
 	// Left wall
-	triangles[4].a = { -1, -1, 1 };
-	triangles[4].b = { -1, 1, 1 };
-	triangles[4].c = { -1, -1, -4 };
-	triangles[4].material = {
+	t.a = { -1, -1, 1 };
+	t.b = { -1, 1, 1 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
-	triangles[5].a = { -1, 1, 1 };
-	triangles[5].b = { -1, 1, -4 };
-	triangles[5].c = { -1, -1, -4 };
-	triangles[5].material = {
+	triangles.push_back(t.toTriangle());
+
+	t.a = { -1, 1, 1 };
+	t.b = { -1, 1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
 	// Right wall
-	triangles[6].a = { 1, -1, 1 };
-	triangles[6].b = { 1, 1, 1 };
-	triangles[6].c = { 1, -1, -4 };
-	triangles[6].material = {
+	t.a = { 1, -1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { 1, -1, -4 };
+	t.material = {
 		{ 1, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
-	triangles[7].a = { 1, 1, 1 };
-	triangles[7].b = { 1, 1, -4 };
-	triangles[7].c = { 1, -1, -4 };
-	triangles[7].material = {
+	triangles.push_back(t.toTriangle());
+	t.a = { 1, 1, 1 };
+	t.b = { 1, 1, -4 };
+	t.c = { 1, -1, -4 };
+	t.material = {
 		{ 1, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
+
 
 	// Top wall
-	triangles[8].a = { -1, 1, 1 };
-	triangles[8].b = { 1, 1, 1 };
-	triangles[8].c = { -1, 1, -4 };
-	triangles[8].material = {
+	t.a = { -1, 1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { -1, 1, -4 };
+	t.material = {
 		{ 0, 1, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
-	triangles[9].a = { 1, 1, 1 };
-	triangles[9].b = { 1, 1, -4 };
-	triangles[9].c = { -1, 1, -4 };
-	triangles[9].material = {
+
+	t.a = { 1, 1, 1 };
+	t.b = { 1, 1, -4 };
+	t.c = { -1, 1, -4 };
+	t.material = {
 		{ 0, 1, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
+
 
 	// Bottom wall
-	triangles[10].a = { -1, -1, 1 };
-	triangles[10].b = { 1, -1, 1 };
-	triangles[10].c = { -1, -1, -4 };
-	triangles[10].material = {
+	t.a = { -1, -1, 1 };
+	t.b = { 1, -1, 1 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 1, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
-	triangles[11].a = { 1, -1, 1 };
-	triangles[11].b = { 1, -1, -4 };
-	triangles[11].c = { -1, -1, -4 };
-	triangles[11].material = {
+
+	t.a = { 1, -1, 1 };
+	t.b = { 1, -1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 1, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
+
 //
 //	// prism
-//	triangles[12].a = { 0, 0.5, 0 }; // A
-//	triangles[12].b = { 0, 0, 0.5 }; // B
-//	triangles[12].c = { -0.5, 0, 0 }; // C
-//	triangles[12].material = {
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { 0, 0, 0.5 }; // B
+//	t.c = { -0.5, 0, 0 }; // C
+//	t.material = {
 //		{ 1, 1, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	triangles[13].a = { 0, 0.5, 0 }; // A
-//	triangles[13].b = { -0.5, 0, 0 }; // C
-//	triangles[13].c = { 0, 0, -0.5 }; // D
-//	triangles[13].material = {
+// TODO: add  triangles.push_back(t);
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { -0.5, 0, 0 }; // C
+//	t.c = { 0, 0, -0.5 }; // D
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	triangles[14].a = { 0, 0.5, 0 }; // A
-//	triangles[14].b = { 0, 0, -0.5 }; // D
-//	triangles[14].c = { 0.5, 0, 0 }; // E
-//	triangles[14].material = {
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { 0, 0, -0.5 }; // D
+//	t.c = { 0.5, 0, 0 }; // E
+//	t.material = {
 //		{ 0, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	triangles[15].a = { 0, 0.5, 0 }; // A
-//	triangles[15].b = { 0.5, 0, 0 }; // E
-//	triangles[15].c = { 0, 0, 0.5 }; // B
-//	triangles[15].material = {
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { 0.5, 0, 0 }; // E
+//	t.c = { 0, 0, 0.5 }; // B
+//	t.material = {
 //		{ 1, 0, 0 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
@@ -254,54 +290,69 @@ void Renderer::loadModel()
 //	};
 //
 //
-//	triangles[16].a = { 0, -0.5, 0 }; // F
-//	triangles[16].b = { 0, 0, 0.5 }; // B
-//	triangles[16].c = { -0.5, 0, 0 }; // C
-//	triangles[16].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { 0, 0, 0.5 }; // B
+//	t.c = { -0.5, 0, 0 }; // C
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	triangles[17].a = { 0, -0.5, 0 }; // F
-//	triangles[17].b = { -0.5, 0, 0 }; // C
-//	triangles[17].c = { 0, 0, -0.5 }; // D
-//	triangles[17].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { -0.5, 0, 0 }; // C
+//	t.c = { 0, 0, -0.5 }; // D
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	triangles[18].a = { 0, -0.5, 0 }; // F
-//	triangles[18].b = { 0, 0, -0.5 }; // D
-//	triangles[18].c = { 0.5, 0, 0 }; // E
-//	triangles[18].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { 0, 0, -0.5 }; // D
+//	t.c = { 0.5, 0, 0 }; // E
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	triangles[19].a = { 0, -0.5, 0 }; // F
-//	triangles[19].b = { 0.5, 0, 0 }; // E
-//	triangles[19].c = { 0, 0, 0.5 }; // B
-//	triangles[19].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { 0.5, 0, 0 }; // E
+//	t.c = { 0, 0, 0.5 }; // B
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
 
-	auto bvh = buildBVH(std::move(triangles));
-	auto gpuBvh = bvh->makeGpuBvh();
+	scene.spheres.emplace_back();
+	scene.spheres[scene.spheres.size() - 1] = {
+		{ -0.5f, 0.3f, 0 }, 0.2f,
+		{ { 0,0,0 },
+		{ 0.77f, 0.83f, 0.81f }, 2.5f, 1 },
+	};
+	// scene.spheres.emplace_back();
+	// scene.spheres[scene.spheres.size() - 1] = {
+	// 	{ 0, -0.3f, 0 }, 0.2f,
+	// 	{ { 0,0,0 },
+	// 	{ 0.77f, 0.83f, 0.81f }, 2.5f, 2 },
+	// };
+	scene.spheres.emplace_back();
+	scene.spheres[scene.spheres.size() - 1] = {
+		{ 0.5f, 0.3f, 0 }, 0.2f,
+		{ { 0,0,0 },
+		{ 0.77f, 0.83f, 0.81f }, 2.5f, 1 },
+	};
+	scene.triangles = std::move(triangles);
 
-	Lighting light;
-	light.lightSources = std::vector<PointLightSource>(1);
-	light.lightSources[0].intensity = { 1, 1, 1 };
-	light.lightSources[0].position = { 0, 0.85f, 0 };
+	scene.lights.push_back(PointLightSource{
+		{0, 0.8f, 0},
+		{1, 1, 1},
+		});
 
-	addSsbo(gpuBvh.bvhNodes, 4);
-	addSsbo(light.lightSources, 3);
-	addSsbo(gpuBvh.shapes, 2);
+	return scene;
 }
 
 Renderer::Renderer(const RendererConfig& config)
@@ -325,6 +376,9 @@ void Renderer::renderFrame()
 
 void Renderer::loop()
 {
+	CudaRenderer r(config.outputWidth, config.outputHeight);
+	r.loadScene(loadModel());
+
 	bool loop = true;
 
 	// Update 20 times per second
@@ -403,7 +457,9 @@ void Renderer::loop()
 				}
 			}
 		}
-		renderFrame();
+
+		r.renderFrame(*camera);
+		SDL_GL_SwapWindow(mainWindow);
 		fpsCounter.frameRendered();
 	}
 }

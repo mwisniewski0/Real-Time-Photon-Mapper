@@ -8,6 +8,8 @@ x64
 .localhistory
 *.sln
 
+sam
+
 # Prerequisites
 *.d
 

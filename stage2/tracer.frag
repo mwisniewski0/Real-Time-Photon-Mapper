@@ -12,6 +12,21 @@ uniform vec3 cameraEyePos;
 const float EPSILON = 0.0001;
 const float AIR_REFRACTIVE_INDEX = 1;
 
+struct BVHNode {
+	vec3 boundingBoxMinCoords;
+	int leftOrCount;
+	vec3 boundingBoxMaxCoords;
+	int rightOrOffset;
+};
+
+bool isBVHNodeLeaf(BVHNode node) {
+	return 0 != (node.leftOrCount & (1 << 31));
+}
+
+int getBVHNodeCount(BVHNode node) {
+	return node.leftOrCount & 0x7fffffff;
+}
+
 struct Material {
     vec4 color;
     vec4 specularReflectivity;
@@ -50,12 +65,17 @@ struct PointLightSource {
 
 readonly layout(std430, binding = 2) buffer geometryLayout
 {
-    Triangle sceneGeometry[];
+    Triangle triangles[];
 };
 
 readonly layout(std430, binding = 3) buffer lightingLayout
 {
     PointLightSource lightSources[];
+};
+
+readonly layout(std430, binding = 4) buffer bvhLayout
+{
+    BVHNode triangleBvhNodes[];
 };
 
 vec3 v3(vec4 v) {
@@ -83,6 +103,21 @@ vec3 pointAtDistance(Ray ray, float d) {
 
 Ray rayFromPoints(vec3 start, vec3 end) {
     return Ray(start, normalize(end-start));
+}
+
+bool rayIntersectsBVHNode(Ray ray, BVHNode node) {
+	// Based on https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+	float t1 = (node.boundingBoxMinCoords.x - ray.origin.x)/ray.dir.x;
+	float t2 = (node.boundingBoxMaxCoords.x - ray.origin.x)/ray.dir.x;
+	float t3 = (node.boundingBoxMinCoords.y - ray.origin.y)/ray.dir.y;
+	float t4 = (node.boundingBoxMaxCoords.y - ray.origin.y)/ray.dir.y;
+	float t5 = (node.boundingBoxMinCoords.z - ray.origin.z)/ray.dir.z;
+	float t6 = (node.boundingBoxMaxCoords.z - ray.origin.z)/ray.dir.z;
+
+	float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	return tmax >= 0 && tmin <= tmax;
 }
 
 vec3 getNormalAwayFromRay(Ray ray, Triangle t) {
@@ -185,32 +220,76 @@ Ray getCameraRay(Camera cam, vec2 screenPos) {
     return rayFromPoints(cam.eyePos, pointOnScreen);
 }
 
-bool castRay(Ray ray, out RayHit result) {
-    float closestHitDistance = 1. / 0.;  // Infinity
-    for (int i = 0; i < sceneGeometry.length(); ++i) {
-        RayHit hit;
-        if (intersectRayAndTriangle(ray, sceneGeometry[i], hit)) {
-            float distanceSquared = lengthSquared(ray.origin - hit.pointOfHit);
-            if (closestHitDistance > distanceSquared) {
-                closestHitDistance = distanceSquared;
-                result = hit;
-            }
-        }
-    }
+//bool castRay(Ray ray, out RayHit result) {
+//	int nodesIdxsToSearchStack[64];  // Given this is a binary search, 64 should be a sufficent size for
+//							     // the stack
+//    int stackSize = 1;
+//    nodesIdxsToSearchStack[0] = 0;
+//
+//	float closestHitDistance = 1. / 0.;  // Infinity
+//
+//	float trianglesTested = 0;
+//
+//    while(stackSize != 0){
+//		int nodeIdx = nodesIdxsToSearchStack[stackSize - 1]; // pop off the top of the stack
+//		stackSize -= 1;
+//		BVHNode node = triangleBvhNodes[nodeIdx];
+//		if (rayIntersectsBVHNode(ray, node)) {
+//			if(isBVHNodeLeaf(node)){
+//				for (int i = 0; i < getBVHNodeCount(node); ++i) {
+//					trianglesTested += 1;
+//					Triangle triangle = triangles[node.rightOrOffset + i];
+//					
+//					RayHit hit;
+//					if (intersectRayAndTriangle(ray, triangle, hit)) {
+//						float distanceSquared = lengthSquared(ray.origin - hit.pointOfHit);
+//						if (closestHitDistance > distanceSquared) {
+//							closestHitDistance = distanceSquared;
+//							result = hit;
+//						}
+//					}
+//				}
+//			} else {
+//				nodesIdxsToSearchStack[stackSize] = node.leftOrCount;
+//				stackSize += 1;
+//				nodesIdxsToSearchStack[stackSize] = node.rightOrOffset;
+//				stackSize += 1;
+//			}
+//		}
+//    }
+//
+//	color.x += trianglesTested / 950.0f;
+//
+//    return !isinf(closestHitDistance);
+//}
 
-    for (int i = 0; i < spheres.length(); ++i) {
-        RayHit hit;
-        if (intersectRayAndSphere(ray, spheres[i], hit)) {
-            float distanceSquared = lengthSquared(ray.origin - hit.pointOfHit);
-            if (closestHitDistance > distanceSquared) {
-                closestHitDistance = distanceSquared;
-                result = hit;
-            }
-        }
-    }
-
-    return !isinf(closestHitDistance);
-}
+ bool castRay(Ray ray, out RayHit result) {
+ 
+     float closestHitDistance = 1. / 0.;  // Infinity
+     for (int i = 0; i < triangles.length(); ++i) {
+         RayHit hit;
+         if (intersectRayAndTriangle(ray, triangles[i], hit)) {
+             float distanceSquared = lengthSquared(ray.origin - hit.pointOfHit);
+             if (closestHitDistance > distanceSquared) {
+                 closestHitDistance = distanceSquared;
+                 result = hit;
+             }
+         }
+     }
+ 
+     for (int i = 0; i < spheres.length(); ++i) {
+         RayHit hit;
+         if (intersectRayAndSphere(ray, spheres[i], hit)) {
+             float distanceSquared = lengthSquared(ray.origin - hit.pointOfHit);
+             if (closestHitDistance > distanceSquared) {
+                 closestHitDistance = distanceSquared;
+                 result = hit;
+             }
+         }
+     }
+ 
+     return !isinf(closestHitDistance);
+ }
 
 vec3 getHitIllumination(RayHit hit) {
     vec3 illumination = vec3(0.2, 0.2, 0.2) * v3(hit.material.color);
@@ -238,30 +317,34 @@ vec3 getRayColor(Ray ray) {
 
     vec3 currentModifier = vec3(1.0, 1.0, 1.0);
 
+
+
     for (int bounce = 0; bounce < MAX_RAY_BOUNCE; ++bounce) {
         RayHit hit;
-        castRay(ray, hit);
-        if (hit.material.type == 1) {
-            // Specular
-            currentModifier *= v3(hit.material.specularReflectivity);
-            ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
-            ray.dir = reflect(ray.dir, hit.normal);
-        } else if (hit.material.type == 2) {
-			// Refractive
-			if (dot(hit.normal, ray.dir) < 0) {
-				// Ray comes from the inside
-				currentModifier *= v3(hit.material.specularReflectivity);
-				ray.origin = hit.pointOfHit + (-hit.normal * EPSILON);
-				ray.dir = refract(ray.dir, hit.normal, 1.0/hit.material.refractiveIndex);
-			} else {
-				// Ray comes from the outside
+        if (castRay(ray, hit)) {
+			if (hit.material.type == 1) {
+				// Specular
 				currentModifier *= v3(hit.material.specularReflectivity);
 				ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
-				ray.dir = refract(ray.dir, -hit.normal, 1.0/hit.material.refractiveIndex);
+				ray.dir = reflect(ray.dir, hit.normal);
+			} else if (hit.material.type == 2) {
+				// Refractive
+				if (dot(hit.normal, ray.dir) < 0) {
+					// Ray comes from the inside
+					currentModifier *= v3(hit.material.specularReflectivity);
+					ray.origin = hit.pointOfHit + (-hit.normal * EPSILON);
+					ray.dir = refract(ray.dir, hit.normal, 1.0/hit.material.refractiveIndex);
+				} else {
+					// Ray comes from the outside
+					currentModifier *= v3(hit.material.specularReflectivity);
+					ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
+					ray.dir = refract(ray.dir, -hit.normal, 1.0/hit.material.refractiveIndex);
+				}
+			} else {
+				// Diffuse
+				return currentModifier * getHitIllumination(hit);
+
 			}
-        } else {
-            // Diffuse
-            return currentModifier * getHitIllumination(hit);
 		}
     }
 
@@ -274,5 +357,6 @@ Camera getCamera() {
 
 void main(){
     Ray ray = getCameraRay(getCamera(), screenPos);
-    color = getRayColor(ray);
+    vec3 c = getRayColor(ray);
+	color += c;
 }

@@ -1,7 +1,4 @@
-﻿#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include <iostream>
+﻿#include <iostream>
 #include "Renderer.h"
 
 
@@ -19,6 +16,7 @@ int main(int argc, char* argv[])
 
 		Renderer renderer(config);
 		renderer.run();
+		std::cin.ignore();
 	}
 	catch (std::runtime_error err)
 	{

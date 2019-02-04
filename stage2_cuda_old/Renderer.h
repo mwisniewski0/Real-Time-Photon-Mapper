@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include <memory>
 #include <vector>
+#include "Geometry.h"
 
 struct RendererConfig
 {
@@ -56,7 +57,7 @@ class Renderer
 
 	void pushCameraInfoToGPU();
 	void initGL();
-	void loadModel();
+	Scene loadModel();
 	void renderFrame();
 	void loop();
 	void cleanup();
