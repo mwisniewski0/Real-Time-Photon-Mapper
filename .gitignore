@@ -7,6 +7,7 @@ x64
 .vs
 .localhistory
 *.sln
+*.sln.DotSettings.user
 
 sam
 
