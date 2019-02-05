@@ -16,11 +16,6 @@
 
 enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
 
-struct Photon{
-    float3 pos;
-    float3 power;
-};
-
 struct PointLight{
     float3 pos;
     float3 power;
@@ -127,7 +122,7 @@ __global__ void getPhotonsKernel(Photon* photonList){
 
 	if (t < 1e19){
 	    origin+=direction*t;
-	    if (action == DIFFUSE || action == ABSORBED){
+	    if ((action == DIFFUSE || action == ABSORBED)){
 		photonList[MAX_DEPTH*idx + count].pos = origin;
 		photonList[MAX_DEPTH*idx + count].power = color*pointLights[0].power/NUM_PHOTONS;
 		++count;
@@ -164,9 +159,9 @@ __global__ void getPhotonsKernel(Photon* photonList){
 	else{//absorbed	    
 	    break;
 	}
-	for(uint i = 0; i<count; ++i){
-	    photonList[MAX_DEPTH*idx + i].power/=count;
-	}
+    }
+    for(uint i = 0; i<count; ++i){
+	photonList[MAX_DEPTH*idx + i].power/=count;
     }
 
 }
