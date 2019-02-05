@@ -4,7 +4,16 @@
 #include <memory>
 #include "GlHelp.h"
 #include <glm/vec3.hpp>
+#include <cuda_runtime_api.h>
 
+struct CudaCamera
+{
+	float3 screenTopLeft;
+	float3 screenTopRight;
+	float3 screenBottomLeft;
+	float3 screenBottomRight;
+	float3 eyePos;
+};
 
 class Camera
 {
@@ -16,7 +25,7 @@ class Camera
 	float fovX;
 	float fovY;
 
-	glm::vec3 vectorToScreen();
+	glm::vec3 vectorToScreen() const;
 	void refreshRightDir();
 
 public:
@@ -26,6 +35,7 @@ public:
 	static std::unique_ptr<Camera> fromHorizontalFov(glm::vec3 position, glm::vec3 lookingAt,
 		glm::vec3 upDir, float horizontalFov, float aspectRatio);
 
+	CudaCamera getCudaInfo() const;
 	glhelp::CameraInfo getGlslInfo();
 	void moveForward(float delta);
 	void moveBackward(float delta);

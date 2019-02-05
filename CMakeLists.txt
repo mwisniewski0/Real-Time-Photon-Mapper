@@ -8,3 +8,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external_libs/tinyobjloader")
 
 # builds the obj file parser
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/obj_parser")
+
+message("THE COMPILER")
+message("${CMAKE_CXX_COMPILER_ID}")

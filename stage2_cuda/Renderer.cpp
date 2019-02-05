@@ -2,8 +2,11 @@
 #include "Camera.h"
 #include "Helpers.h"
 #include "Geometry.h"
-#include <glm/detail/func_trigonometric.inl>
 #include <iostream>
+#include <glm/glm.hpp>
+#include "BVH.h"
+#include "ply.h"
+#include "cudaRenderer.h"
 
 
 // Photon-defined SDL messages
@@ -73,7 +76,7 @@ void Renderer::initGL()
 	// TODO: consider whether we want double buffering or not. We only draw one rectangle, so we
 	// might not need the extra buffer.
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetSwapInterval(1);
+	SDL_GL_SetSwapInterval(0);
 
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -83,168 +86,203 @@ void Renderer::initGL()
 	glUseProgram(glProgramId);
 }
 
-void Renderer::loadModel()
+struct Triangle2
+{
+	float3 a, b, c;
+	Material material;
+
+	Triangle toTriangle()
+	{
+		return Triangle::from3Points(a, b, c, material);
+	}
+};
+
+Scene Renderer::loadModel()
 {
 	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
 	// is hardcoded (our model loading code is still in production).
 	
-	SceneGeometry geo;
-	geo.sceneGeometry = std::vector<Triangle>(20);
+	std::vector<Triangle> triangles; // = loadTriangles("bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
+
+	Scene scene;
+
+	Triangle2 t;
 
 	// Back wall
-	geo.sceneGeometry[0].a = { -1, 1, 1 };
-	geo.sceneGeometry[0].b = { 1, 1, 1 };
-	geo.sceneGeometry[0].c = { -1, -1, 1 };
-	geo.sceneGeometry[0].material = {
+	t.a = { -1, 1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { -1, -1, 1 };
+	t.material = {
 		{ 1, 0, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0001 // type
 	};
-	geo.sceneGeometry[1].a = { 1, 1, 1 };
-	geo.sceneGeometry[1].b = { 1, -1, 1 };
-	geo.sceneGeometry[1].c = { -1, -1, 1 };
-	geo.sceneGeometry[1].material = {
+	triangles.push_back(t.toTriangle());
+
+	t.a = { 1, 1, 1 };
+	t.b = { 1, -1, 1 };
+	t.c = { -1, -1, 1 };
+	t.material = {
 		{ 1, 0, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0001 // type
 	};
+	triangles.push_back(t.toTriangle());
 
 	// Front wall
-	geo.sceneGeometry[2].a = { -1, 1, -4 };
-	geo.sceneGeometry[2].b = { 1, 1, -4 };
-	geo.sceneGeometry[2].c = { -1, -1, -4 };
-	geo.sceneGeometry[2].material = {
+	t.a = { -1, 1, -4 };
+	t.b = { 1, 1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
-	geo.sceneGeometry[3].a = { 1, 1, -4 };
-	geo.sceneGeometry[3].b = { 1, -1, -4 };
-	geo.sceneGeometry[3].c = { -1, -1, -4 };
-	geo.sceneGeometry[3].material = {
+	triangles.push_back(t.toTriangle());
+
+	t.a = { 1, 1, -4 };
+	t.b = { 1, -1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
 	// Left wall
-	geo.sceneGeometry[4].a = { -1, -1, 1 };
-	geo.sceneGeometry[4].b = { -1, 1, 1 };
-	geo.sceneGeometry[4].c = { -1, -1, -4 };
-	geo.sceneGeometry[4].material = {
+	t.a = { -1, -1, 1 };
+	t.b = { -1, 1, 1 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
-	geo.sceneGeometry[5].a = { -1, 1, 1 };
-	geo.sceneGeometry[5].b = { -1, 1, -4 };
-	geo.sceneGeometry[5].c = { -1, -1, -4 };
-	geo.sceneGeometry[5].material = {
+	triangles.push_back(t.toTriangle());
+
+	t.a = { -1, 1, 1 };
+	t.b = { -1, 1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 0, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
 	// Right wall
-	geo.sceneGeometry[6].a = { 1, -1, 1 };
-	geo.sceneGeometry[6].b = { 1, 1, 1 };
-	geo.sceneGeometry[6].c = { 1, -1, -4 };
-	geo.sceneGeometry[6].material = {
+	t.a = { 1, -1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { 1, -1, -4 };
+	t.material = {
 		{ 1, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
-	geo.sceneGeometry[7].a = { 1, 1, 1 };
-	geo.sceneGeometry[7].b = { 1, 1, -4 };
-	geo.sceneGeometry[7].c = { 1, -1, -4 };
-	geo.sceneGeometry[7].material = {
+	triangles.push_back(t.toTriangle());
+	t.a = { 1, 1, 1 };
+	t.b = { 1, 1, -4 };
+	t.c = { 1, -1, -4 };
+	t.material = {
 		{ 1, 1, 0 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
+
 
 	// Top wall
-	geo.sceneGeometry[8].a = { -1, 1, 1 };
-	geo.sceneGeometry[8].b = { 1, 1, 1 };
-	geo.sceneGeometry[8].c = { -1, 1, -4 };
-	geo.sceneGeometry[8].material = {
+	t.a = { -1, 1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { -1, 1, -4 };
+	t.material = {
 		{ 0, 1, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
-	geo.sceneGeometry[9].a = { 1, 1, 1 };
-	geo.sceneGeometry[9].b = { 1, 1, -4 };
-	geo.sceneGeometry[9].c = { -1, 1, -4 };
-	geo.sceneGeometry[9].material = {
+
+	t.a = { 1, 1, 1 };
+	t.b = { 1, 1, -4 };
+	t.c = { -1, 1, -4 };
+	t.material = {
 		{ 0, 1, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
+
 
 	// Bottom wall
-	geo.sceneGeometry[10].a = { -1, -1, 1 };
-	geo.sceneGeometry[10].b = { 1, -1, 1 };
-	geo.sceneGeometry[10].c = { -1, -1, -4 };
-	geo.sceneGeometry[10].material = {
+	t.a = { -1, -1, 1 };
+	t.b = { 1, -1, 1 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 1, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
-	geo.sceneGeometry[11].a = { 1, -1, 1 };
-	geo.sceneGeometry[11].b = { 1, -1, -4 };
-	geo.sceneGeometry[11].c = { -1, -1, -4 };
-	geo.sceneGeometry[11].material = {
+
+	t.a = { 1, -1, 1 };
+	t.b = { 1, -1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
 		{ 1, 0, 1 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
 	};
+	triangles.push_back(t.toTriangle());
 
-	// prism
-//	geo.sceneGeometry[12].a = { 0, 0.5, 0 }; // A
-//	geo.sceneGeometry[12].b = { 0, 0, 0.5 }; // B
-//	geo.sceneGeometry[12].c = { -0.5, 0, 0 }; // C
-//	geo.sceneGeometry[12].material = {
+//
+//	// prism
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { 0, 0, 0.5 }; // B
+//	t.c = { -0.5, 0, 0 }; // C
+//	t.material = {
 //		{ 1, 1, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	geo.sceneGeometry[13].a = { 0, 0.5, 0 }; // A
-//	geo.sceneGeometry[13].b = { -0.5, 0, 0 }; // C
-//	geo.sceneGeometry[13].c = { 0, 0, -0.5 }; // D
-//	geo.sceneGeometry[13].material = {
+// TODO: add  triangles.push_back(t);
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { -0.5, 0, 0 }; // C
+//	t.c = { 0, 0, -0.5 }; // D
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	geo.sceneGeometry[14].a = { 0, 0.5, 0 }; // A
-//	geo.sceneGeometry[14].b = { 0, 0, -0.5 }; // D
-//	geo.sceneGeometry[14].c = { 0.5, 0, 0 }; // E
-//	geo.sceneGeometry[14].material = {
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { 0, 0, -0.5 }; // D
+//	t.c = { 0.5, 0, 0 }; // E
+//	t.material = {
 //		{ 0, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	geo.sceneGeometry[15].a = { 0, 0.5, 0 }; // A
-//	geo.sceneGeometry[15].b = { 0.5, 0, 0 }; // E
-//	geo.sceneGeometry[15].c = { 0, 0, 0.5 }; // B
-//	geo.sceneGeometry[15].material = {
+//	t.a = { 0, 0.5, 0 }; // A
+//	t.b = { 0.5, 0, 0 }; // E
+//	t.c = { 0, 0, 0.5 }; // B
+//	t.material = {
 //		{ 1, 0, 0 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
@@ -252,62 +290,69 @@ void Renderer::loadModel()
 //	};
 //
 //
-//	geo.sceneGeometry[16].a = { 0, -0.5, 0 }; // F
-//	geo.sceneGeometry[16].b = { 0, 0, 0.5 }; // B
-//	geo.sceneGeometry[16].c = { -0.5, 0, 0 }; // C
-//	geo.sceneGeometry[16].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { 0, 0, 0.5 }; // B
+//	t.c = { -0.5, 0, 0 }; // C
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	geo.sceneGeometry[17].a = { 0, -0.5, 0 }; // F
-//	geo.sceneGeometry[17].b = { -0.5, 0, 0 }; // C
-//	geo.sceneGeometry[17].c = { 0, 0, -0.5 }; // D
-//	geo.sceneGeometry[17].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { -0.5, 0, 0 }; // C
+//	t.c = { 0, 0, -0.5 }; // D
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	geo.sceneGeometry[18].a = { 0, -0.5, 0 }; // F
-//	geo.sceneGeometry[18].b = { 0, 0, -0.5 }; // D
-//	geo.sceneGeometry[18].c = { 0.5, 0, 0 }; // E
-//	geo.sceneGeometry[18].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { 0, 0, -0.5 }; // D
+//	t.c = { 0.5, 0, 0 }; // E
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
-//	geo.sceneGeometry[19].a = { 0, -0.5, 0 }; // F
-//	geo.sceneGeometry[19].b = { 0.5, 0, 0 }; // E
-//	geo.sceneGeometry[19].c = { 0, 0, 0.5 }; // B
-//	geo.sceneGeometry[19].material = {
+//	t.a = { 0, -0.5, 0 }; // F
+//	t.b = { 0.5, 0, 0 }; // E
+//	t.c = { 0, 0, 0.5 }; // B
+//	t.material = {
 //		{ 1, 0, 1 }, // color
 //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 //		2.5,  // refractive index (diamond)
 //		0x0002 // type
 //	};
 
+	scene.spheres.emplace_back();
+	scene.spheres[scene.spheres.size() - 1] = {
+		{ -0.5f, 0.3f, 0 }, 0.2f,
+		{ { 0,0,0 },
+		{ 0.77f, 0.83f, 0.81f }, 2.5f, 1 },
+	};
+	// scene.spheres.emplace_back();
+	// scene.spheres[scene.spheres.size() - 1] = {
+	// 	{ 0, -0.3f, 0 }, 0.2f,
+	// 	{ { 0,0,0 },
+	// 	{ 0.77f, 0.83f, 0.81f }, 2.5f, 2 },
+	// };
+	scene.spheres.emplace_back();
+	scene.spheres[scene.spheres.size() - 1] = {
+		{ 0.5f, 0.3f, 0 }, 0.2f,
+		{ { 0,0,0 },
+		{ 0.77f, 0.83f, 0.81f }, 2.5f, 1 },
+	};
+	scene.triangles = std::move(triangles);
 
-	Lighting light;
-	light.lightSources = std::vector<PointLightSource>(1);
-	light.lightSources[0].intensity = { 1, 1, 1 };
-	light.lightSources[0].position = { 0, 0.85f, 0 };
+	scene.lights.push_back(PointLightSource{
+		{0, 0.8f, 0},
+		{1, 1, 1},
+		});
 
-	GLuint geoSsbo;
-	glGenBuffers(1, &geoSsbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, geoSsbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, geo.getSize(), geo.getPointer(), GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, geoSsbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-
-	GLuint lightSsbo;
-	glGenBuffers(1, &lightSsbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSsbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, light.getSize(), light.getPointer(), GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lightSsbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+	return scene;
 }
 
 Renderer::Renderer(const RendererConfig& config)
@@ -316,7 +361,7 @@ Renderer::Renderer(const RendererConfig& config)
 
 	// TODO(#2): The input file should specify information about camera. This will be hardcoded for
 	// now.
-	this->camera = Camera::fromHorizontalFov(glm::vec3(0, -0.7, -0.7), glm::vec3(0, 0, 1),
+	this->camera = Camera::fromHorizontalFov(glm::vec3(0, 0, -1), glm::vec3(0, 0, 1),
 		glm::vec3(0, 1, 0), glm::radians(config.horizontalFovDegrees),
 		((float) config.outputWidth) / config.outputHeight);
 }
@@ -331,6 +376,9 @@ void Renderer::renderFrame()
 
 void Renderer::loop()
 {
+	CudaRenderer r(config.outputWidth, config.outputHeight);
+	r.loadScene(loadModel());
+
 	bool loop = true;
 
 	// Update 20 times per second
@@ -409,7 +457,9 @@ void Renderer::loop()
 				}
 			}
 		}
-		renderFrame();
+
+		r.renderFrame(*camera);
+		SDL_GL_SwapWindow(mainWindow);
 		fpsCounter.frameRendered();
 	}
 }

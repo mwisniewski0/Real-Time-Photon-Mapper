@@ -2,7 +2,7 @@
 #include "Transform3d.h"
 #include <memory>
 
-glm::vec3 Camera::vectorToScreen()
+glm::vec3 Camera::vectorToScreen() const
 {
 	return this->lookingAt - this->position;
 }
@@ -31,6 +31,32 @@ std::unique_ptr<Camera> Camera::fromHorizontalFov(glm::vec3 position, glm::vec3 
 	float heightAtDistance1 = widthAtDistance1 / aspectRatio;
 	float verticalFov = atan(heightAtDistance1 / 2.0f) * 2.0f;
 	return std::make_unique<Camera>(position, lookingAt, upDir, horizontalFov, verticalFov);
+}
+
+float3 toFloat3(const glm::vec3& vec)
+{
+	float3 res;
+	res.x = vec.x;
+	res.y = vec.y;
+	res.z = vec.z;
+	return res;
+}
+
+CudaCamera Camera::getCudaInfo() const
+{
+	CudaCamera result;
+	result.eyePos = toFloat3(position);
+
+	float distanceToScreen = glm::length(vectorToScreen());
+	auto horizontalStretch = distanceToScreen * tanf(fovX / 2.f) * rightDir;
+	auto verticalStretch = distanceToScreen * tanf(fovY / 2.f) * upDir;
+
+	result.screenBottomLeft = toFloat3(lookingAt - horizontalStretch - verticalStretch);
+	result.screenBottomRight = toFloat3(lookingAt + horizontalStretch - verticalStretch);
+	result.screenTopLeft = toFloat3(lookingAt - horizontalStretch + verticalStretch);
+	result.screenTopRight = toFloat3(lookingAt + horizontalStretch + verticalStretch);
+
+	return result;
 }
 
 glhelp::CameraInfo Camera::getGlslInfo()

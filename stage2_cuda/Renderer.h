@@ -9,6 +9,9 @@
 #include <GL/glew.h>
 #include "Camera.h"
 #include <memory>
+#include <vector>
+#include "Geometry.h"
+#include "scene.h"
 
 struct RendererConfig
 {
@@ -55,10 +58,22 @@ class Renderer
 
 	void pushCameraInfoToGPU();
 	void initGL();
-	void loadModel();
+	Scene loadModel();
 	void renderFrame();
 	void loop();
 	void cleanup();
+
+	template <typename T>
+	void addSsbo(const std::vector<T>& v, int layoutId)
+	{
+		GLuint ssbo;
+		glGenBuffers(1, &ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, v.size() * sizeof(T), &v[0], GL_DYNAMIC_DRAW);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, layoutId, ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+	}
+
 public:
 	Renderer(const RendererConfig& config);
 	void run();

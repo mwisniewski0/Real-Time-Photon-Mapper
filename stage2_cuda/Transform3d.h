@@ -66,9 +66,9 @@ public:
 
 	/**
 	* Creates a transform that scales points by the provided ratios
-	* @param scaleX The scale factor in the x-direction
-	* @param scaleY The scale factor in the y-direction
-	* @param scaleZ The scale factor in the z-direction
+	* @param scaleX The scale factor in the x-dir
+	* @param scaleY The scale factor in the y-dir
+	* @param scaleZ The scale factor in the z-dir
 	* @return A transform that scales points by the provided ratios
 	*/
 	static Transform3D getScaleInstance(float scaleX, float scaleY, float scaleZ);
