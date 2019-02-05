@@ -1,14 +1,13 @@
 #ifdef _WIN64
 #include <windows.h>
 #endif
-
-#include "cudaRenderer.h"
 #include "cuda.h"
+#include "cudaRenderer.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "cuda_gl_interop.h"
-#include "Geometry.h"
-#include "cutil_math.h"
+#include "../common/geometry.h"
+#include "../common/cutil_math.h"
 #include <iostream>
 #include "BVH.h"
 

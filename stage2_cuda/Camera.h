@@ -2,7 +2,7 @@
 #define CAMERA_H_INCLUDED__
 
 #include <memory>
-#include "cutil_math.h"
+#include "../common/cutil_math.h"
 #include <cuda_runtime_api.h>
 
 struct CudaCamera

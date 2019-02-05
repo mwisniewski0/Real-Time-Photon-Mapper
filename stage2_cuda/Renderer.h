@@ -10,8 +10,8 @@
 #include "Camera.h"
 #include <memory>
 #include <vector>
-#include "Geometry.h"
-#include "scene.h"
+#include "../common/geometry.h"
+#include "../common/scene.h"
 
 struct RendererConfig
 {

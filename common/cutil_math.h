@@ -9,6 +9,7 @@
 *
 */
 
+
 /*
 *  This file implements common mathematical operations on vector types
 *  (float3, float4 etc.) since these are not provided as standard by CUDA.
@@ -22,10 +23,139 @@
 
 #pragma once
 
-#include "cuda_runtime.h"
 
 typedef unsigned int uint;
 typedef unsigned short ushort;
+
+#ifndef __CUDACC__
+#define __device__
+#define __host__
+#endif
+
+#ifdef NO_CUDA
+
+struct float4
+{
+	float x, y, z, w;
+};
+inline float4 make_float4(float x, float y, float z, float w)
+{
+	float4 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	result.w = w;
+	return result;
+}
+
+struct float3
+{
+	float x, y, z;
+};
+inline float3 make_float3(float x, float y, float z)
+{
+	float3 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	return result;
+}
+
+struct float2
+{
+	float x, y;
+};
+inline float2 make_float2(float x, float y)
+{
+	float2 result;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+
+struct int4
+{
+	int x, y, z, w;
+};
+inline int4 make_int4(int x, int y, int z, int w)
+{
+	int4 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	result.w = w;
+	return result;
+}
+
+struct int3
+{
+	int x, y, z;
+};
+inline int3 make_int3(int x, int y, int z)
+{
+	int3 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	return result;
+}
+
+struct int2
+{
+	int x, y;
+};
+inline int2 make_int2(int x, int y)
+{
+	int2 result;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+
+struct uint4
+{
+	uint x, y, z, w;
+};
+inline uint4 make_uint4(uint x, uint y, uint z, uint w)
+{
+	uint4 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	result.w = w;
+	return result;
+}
+
+struct uint3
+{
+	uint x, y, z;
+};
+inline uint3 make_uint3(uint x, uint y, uint z)
+{
+	uint3 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	return result;
+}
+
+struct uint2
+{
+	uint x, y;
+};
+inline uint2 make_uint2(uint x, uint y)
+{
+	uint2 result;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+
+#else
+
+#include "cuda_runtime.h"
+
+#endif
 
 #ifndef EXIT_WAIVED
 #define EXIT_WAIVED 2

@@ -1,7 +1,6 @@
 #include "geometry.h"
 #include <vector>
 
-
 BoundingBox Triangle::boundingBoxForMany(const std::vector<Triangle>& triangles)
 {
 	BoundingBox result;

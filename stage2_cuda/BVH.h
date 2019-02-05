@@ -1,11 +1,10 @@
 #pragma once
 
 #include <float.h> // for max and min
-#include <cuda_runtime.h>
+#include "../common/cutil_math.h"
 #include <vector>
-#include "geometry.h"
+#include "../common/geometry.h"
 #include <iostream>
-#include "cutil_math.h"
 #include "cudaHelpers.h"
 #include <memory>
 

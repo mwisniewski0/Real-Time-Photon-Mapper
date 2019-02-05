@@ -7,11 +7,11 @@
 
 #include <GL/glew.h>
 #include "cuda_gl_interop.h"
-#include "Geometry.h"
+#include "../common/geometry.h"
 #include "Camera.h"
 #include "cudaHelpers.h"
 #include "BVH.h"
-#include "scene.h"
+#include "../common/scene.h"
 
 struct SceneInfo
 {

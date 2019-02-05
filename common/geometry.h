@@ -1,13 +1,9 @@
 #pragma once
 #define M_PI   3.14159265358979323846264338327950288
 
-#include <iostream>
 #include <vector>
-#include <cuda_runtime.h>
-#include <vector_types.h>
-#include <curand_kernel.h>
 #include <chrono>
-#include "cutil_math.h"
+#include "../common/cutil_math.h"
 
 struct BoundingBox
 {
@@ -120,7 +116,7 @@ struct Triangle : public Shape {
 	// Moller-Trumbore algorithm for triangle-ray intersection. Returns < 0 if no intersection
 	// occurred. If intersection occured the result will be the distance of the intersection point
 	// to the ray origin
-	__device__ float Triangle::intersect(const Ray& r) const
+	__device__ float intersect(const Ray& r) const
 	{
 		float3 tvec = r.origin - p;
 		float3 pvec = cross(r.dir, v1);

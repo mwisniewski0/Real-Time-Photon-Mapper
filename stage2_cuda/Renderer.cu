@@ -1,7 +1,7 @@
 ﻿#include "Renderer.h"
 #include "Camera.h"
 #include "Helpers.h"
-#include "Geometry.h"
+#include "../common/geometry.h"
 #include <iostream>
 #include "BVH.h"
 #include "ply.h"

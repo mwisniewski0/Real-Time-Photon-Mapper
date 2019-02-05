@@ -1,7 +1,7 @@
 #ifndef __PLY_H_INCLUDED
 #define __PLY_H_INCLUDED
 #include <vector>
-#include "Geometry.h"
+#include "../common/geometry.h"
 #include <string>
 
 
