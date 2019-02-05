@@ -3,7 +3,7 @@
 #include "Helpers.h"
 #include "../common/geometry.h"
 #include <iostream>
-#include "BVH.h"
+#include "gpuBvh.h"
 #include "ply.h"
 #include "cudaRenderer.h"
 #include "GlHelp.h"

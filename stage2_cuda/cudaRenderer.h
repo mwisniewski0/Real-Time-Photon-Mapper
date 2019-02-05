@@ -10,8 +10,8 @@
 #include "../common/geometry.h"
 #include "Camera.h"
 #include "cudaHelpers.h"
-#include "BVH.h"
 #include "../common/scene.h"
+#include "gpuBvh.h"
 
 struct SceneInfo
 {

@@ -1,6 +1,8 @@
 #include "bvh.h"
 
 
+const float inf = std::numeric_limits<float>().infinity();
+
 enum Axis
 {
 	AxisX, AxisY, AxisZ
@@ -47,6 +49,19 @@ float getSplitCost(const std::vector<Triangle>& shapes, Axis splitAxis, float sp
 }
 
 
+// triangles that haven't been added to bvh yet 
+struct BBoxTemp {
+	float3 min;
+	float3 max;
+	float3 center;
+	Triangle triangle;
+	BBoxTemp() :
+		min({ inf, inf, inf }),
+		max({ -inf, -inf, -inf })
+	{}
+};
+
+
 std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	if (working.size() < 4) { // if only 4 triangles left
 		auto leaf = std::make_unique<BVHLeaf>();
@@ -54,8 +69,8 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 			leaf->triangles.push_back(working[i].triangle);
 		return leaf;
 	}
-	float3 min = { FLT_MAX,FLT_MAX,FLT_MAX };
-	float3 max = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
+	float3 min = { inf,inf,inf };
+	float3 max = { -inf,-inf,-inf };
 
 	// calculate bounds for current working list
 	for (unsigned i = 0; i<working.size(); ++i) {
@@ -72,7 +87,7 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	float min_cost = working.size() * (side1*side2 +
 		side2*side3 +
 		side3*side1);
-	float best_split = FLT_MAX; // best value along axis
+	float best_split = inf; // best value along axis
 
 	int best_axis = -1; // best axis
 
@@ -103,11 +118,11 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 
 		// determine how good each plane is for splitting
 		for (float test_split = start + step; test_split < stop - step; test_split += step) {
-			float3 lmin = { FLT_MAX,FLT_MAX,FLT_MAX };
-			float3 lmax = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
+			float3 lmin = { inf,inf,inf };
+			float3 lmax = { -inf,-inf,-inf };
 
-			float3 rmin = { FLT_MAX,FLT_MAX,FLT_MAX };
-			float3 rmax = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
+			float3 rmin = { inf,inf,inf };
+			float3 rmax = { -inf,-inf,-inf };
 
 			int lcount = 0;
 			int rcount = 0;
@@ -164,10 +179,10 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	// otherwise, create left and right working lists and call function recursively
 	std::vector<BBoxTemp> left;
 	std::vector<BBoxTemp> right;
-	float3 lmin = { FLT_MAX,FLT_MAX,FLT_MAX };
-	float3 lmax = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
-	float3 rmin = { FLT_MAX,FLT_MAX,FLT_MAX };
-	float3 rmax = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
+	float3 lmin = { inf,inf,inf };
+	float3 lmax = { -inf,-inf,-inf };
+	float3 rmin = { inf,inf,inf };
+	float3 rmax = { -inf,-inf,-inf };
 
 	for (unsigned i = 0; i<working.size(); ++i) {
 		BBoxTemp& v = working[i];
@@ -200,72 +215,11 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	return inner;
 }
 
-struct BVHGpuDataRaw
-{
-	std::vector<GpuBvhNode> bvhNodes;
-	std::vector<Triangle> triangles;
-
-	BVHGpuData toGpu() const
-	{
-		BVHGpuData data;
-		data.triangles = vectorToGpu(triangles);
-		data.bvhNodes = vectorToGpu(bvhNodes);
-		return data;
-	}
-};
-
-
-void makeGpuBvhInternal(BVHNode* node, BVHGpuDataRaw* data)
-{
-	data->bvhNodes.emplace_back();
-	int currIndex = data->bvhNodes.size() - 1;
-	auto box = node->boundingBox;
-	data->bvhNodes[currIndex].setBoundingBox(box);
-
-	if (node->isLeaf())
-	{
-		BVHLeaf* leaf = dynamic_cast<BVHLeaf*>(node);
-		data->bvhNodes[currIndex].setAsLeaf();
-		data->bvhNodes[currIndex].setCount(leaf->triangles.size());
-		data->bvhNodes[currIndex].u.leaf.offset = data->triangles.size();
-
-		for (const auto& shape : leaf->triangles)
-		{
-			data->triangles.push_back(shape);
-		}
-	}
-	else
-	{
-		BVHInner* inner = dynamic_cast<BVHInner*>(node);
-		data->bvhNodes[currIndex].u.inner.left = data->bvhNodes.size(); // The next node will be the left node
-		makeGpuBvhInternal(inner->left.get(), data);
-
-		data->bvhNodes[currIndex].u.inner.right = data->bvhNodes.size(); // The next node will be the right node
-		makeGpuBvhInternal(inner->right.get(), data);
-	}
-}
-
-void GpuBvhNode::setBoundingBox(BoundingBox box)
-{
-	min = box.minCoords;
-	max = box.maxCoords;
-}
-
-
-BVHGpuData BVHNode::makeGpuBvh()
-{
-	BVHGpuDataRaw data;
-	makeGpuBvhInternal(this, &data);
-	return data.toGpu();
-}
-
 std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles)
 {
 	std::vector<BBoxTemp> working;
-	float3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
-	float3 max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-
-	std::cout << "Gathering box info..." << std::endl;
+	float3 min = {inf, inf, inf};
+	float3 max = {-inf, -inf, -inf};
 
 	for (unsigned i = 0; i < triangles.size(); ++i)
 	{
@@ -289,8 +243,6 @@ std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles)
 
 		working.push_back(b);
 	}
-
-	std::cout << "Creating BVH..." << std::endl;
 
 	auto root = recurse(working);
 	root->boundingBox.minCoords = min;

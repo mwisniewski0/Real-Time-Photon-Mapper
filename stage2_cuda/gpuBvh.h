@@ -1,12 +1,7 @@
 #pragma once
 
-#include <float.h> // for max and min
-#include "../common/cutil_math.h"
-#include <vector>
-#include "../common/geometry.h"
-#include <iostream>
+#include "../common/bvh.h"
 #include "cudaHelpers.h"
-#include <memory>
 
 
 // Representation of BVH nodes for GPUs. This is exactly 32 bytes which is the size of an L2 cache
@@ -54,7 +49,7 @@ struct BVHGpuData
 	GPUVector<GpuBvhNode> bvhNodes;
 	GPUVector<Triangle> triangles;
 
-	__device__ Triangle* intersectRay(const Ray& ray, float& out_distanceFromRayOrigin) const
+	__host__ __device__ Triangle* intersectRay(const Ray& ray, float& out_distanceFromRayOrigin) const
 	{
 		Triangle* result = nullptr;
 
@@ -89,9 +84,9 @@ struct BVHGpuData
 			}
 			else
 			{
-				Box b;
-				b.min = node.min;
-				b.max = node.max;
+				BoundingBox b;
+				b.minCoords = node.min;
+				b.maxCoords = node.max;
 				if (b.intersect(ray))
 				{
 					dfsStack[stackSize++] = node.u.inner.left; // push right and left onto stack
@@ -103,40 +98,4 @@ struct BVHGpuData
 	}
 };
 
-// bvh interface on host
-struct BVHNode{
-	BoundingBox boundingBox;
-    virtual bool isLeaf() = 0;
-	BVHGpuData makeGpuBvh();
-};
-
-
-// intermediate node. points to left and right
-struct BVHInner: BVHNode {
-    std::unique_ptr<BVHNode> left;
-    std::unique_ptr<BVHNode> right;
-    virtual bool isLeaf(){return false;}
-};
-
-// leaf node in tree. contains list of triangles
-struct BVHLeaf: BVHNode{
-    std::vector<Triangle> triangles;
-    virtual bool isLeaf(){return true;}
-};
-
-// triangles that haven't been added to bvh yet 
-struct BBoxTemp{
-    float3 min;
-    float3 max;
-    float3 center;
-    Triangle triangle;
-    BBoxTemp() :
-	min({FLT_MAX, FLT_MAX, FLT_MAX}),
-	max({-FLT_MAX, -FLT_MAX, -FLT_MAX})
-    {}
-};
-
-extern std::vector<Triangle> triangles_ordered;
-extern std::vector<GpuBvhNode> compact_BVH;
-
-std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles);
+BVHGpuData makeGpuBvh(const BVHNode* root);

@@ -9,7 +9,7 @@
 #include "../common/geometry.h"
 #include "../common/cutil_math.h"
 #include <iostream>
-#include "BVH.h"
+#include "gpuBvh.h"
 
 __device__ const float EPSILON = 0.00001;
 __device__ const float AIR_REFRACTIVE_INDEX = 1;
@@ -316,7 +316,7 @@ SceneInfo SceneInfo::fromScene(const Scene& scene)
 
 	std::vector<Triangle> cop = scene.triangles;
 	std::unique_ptr<BVHNode> bvh = buildBVH(std::move(cop));
-	result.triangleBvh = bvh->makeGpuBvh();
+	result.triangleBvh = makeGpuBvh(bvh.get());
 
 	result.spheres = vectorToGpu(scene.spheres);
 	result.lights = vectorToGpu(scene.lights);
