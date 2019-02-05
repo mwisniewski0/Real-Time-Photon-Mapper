@@ -55,6 +55,8 @@ struct BVHGpuDataRaw
 struct BVHNode{
 	BoundingBox boundingBox;
     virtual bool isLeaf() const = 0;
+
+	std::unique_ptr<BVHGpuDataRaw> toRaw() const;
 };
 
 // intermediate node. points to left and right
