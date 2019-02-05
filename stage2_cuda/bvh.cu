@@ -1,11 +1,52 @@
 #include "bvh.h"
 
-std::vector<Triangle> triangles_ordered;
-std::vector<GpuBvhNode> compact_BVH;
+
+enum Axis
+{
+	AxisX, AxisY, AxisZ
+};
+
+float getSplitCost(const std::vector<Triangle>& shapes, Axis splitAxis, float splitPosition)
+{
+	float leftArea = 0.0f;
+	float rightArea = 0.0f;
+
+	unsigned leftCount = 0;
+	unsigned rightCount = 0;
+
+	BoundingBox leftBox;
+	BoundingBox rightBox;
+
+	for (const auto& shape : shapes) {
+		// Split between halves based on the center
+		float position;
+		switch (splitAxis)
+		{
+		case AxisX:
+			position = shape.center().x;
+			break;
+		case AxisY:
+			position = shape.center().y;
+			break;
+		case AxisZ:
+			position = shape.center().z;
+			break;
+		}
+
+		if (position < splitPosition) {
+			leftBox = leftBox.merge(shape.getBoundingBox());
+			leftCount++;
+		}
+		else {
+			rightBox = rightBox.merge(shape.getBoundingBox());
+			rightCount++;
+		}
+	}
+
+	return leftBox.getArea()*leftCount + rightBox.getArea()*rightCount;
+}
 
 
-// recursively build bvh split on planes parallel to axes
-// tries to keep surface area the same for both halves
 std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	if (working.size() < 4) { // if only 4 triangles left
 		auto leaf = std::make_unique<BVHLeaf>();
@@ -184,8 +225,8 @@ void makeGpuBvhInternal(BVHNode* node, BVHGpuDataRaw* data)
 	if (node->isLeaf())
 	{
 		BVHLeaf* leaf = dynamic_cast<BVHLeaf*>(node);
-		// TODO: document 0x80000000
-		data->bvhNodes[currIndex].u.leaf.count = 0x80000000 | leaf->triangles.size();
+		data->bvhNodes[currIndex].setAsLeaf();
+		data->bvhNodes[currIndex].setCount(leaf->triangles.size());
 		data->bvhNodes[currIndex].u.leaf.offset = data->triangles.size();
 
 		for (const auto& shape : leaf->triangles)

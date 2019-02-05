@@ -8,7 +8,7 @@
 #include "device_launch_parameters.h"
 #include "cuda_gl_interop.h"
 #include "Geometry.h"
-#include "helper_math.h"
+#include "cutil_math.h"
 #include <iostream>
 #include "BVH.h"
 
@@ -80,134 +80,24 @@ __device__ float lengthSquared(float3 v)
 	return dot(v, v);
 }
 
-// MollerTrumbore intersection algorithm
-// Source: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-__device__ bool intersectRayAndTriangle(const Ray& ray, const Triangle& t, RayHit* hit)
-{
-	float3 edge1, edge2, h, s, q;
-	float a, f, u, v;
-	edge1 = t.v0;
-	edge2 = t.v1;
-	h = cross(ray.dir, edge2);
-	a = dot(edge1, h);
-	if (a > -EPSILON && a < EPSILON)
-	{
-		// This ray is parallel to this triangle.
-		return false;
-	}
-
-	f = 1.0 / a;
-	s = ray.origin - t.p;
-	u = f * dot(s, h);
-	if (u < 0.0 || u > 1.0)
-	{
-		return false;
-	}
-
-	q = cross(s, edge1);
-	v = f * dot(ray.dir, q);
-	if (v < 0.0 || u + v > 1.0)
-	{
-		return false;
-	}
-
-	// At this stage we can compute d to find out where the intersection point is on the line.
-	float d = f * dot(edge2, q);
-	if (d > EPSILON)
-	{
-		// ray intersection
-		hit->pointOfHit = ray.pointAtDistance(d);
-		hit->normal = getNormalAwayFromRay(ray, t);
-		hit->material = t.material;
-		return true;
-	}
-	else
-	{
-		// This means that there is a line intersection but not a ray intersection.
-		return false;
-	}
-}
-
-__device__ int intersectTriangles(const Ray& r_in, float& t, const BVHGpuData& bvhData) {
-	int id = -1;
-	int stack[64]; // its reasonable to assume this will be way bigger than neccesary
-	int stack_idx = 1;
-	stack[0] = 0;
-	float d;
-	float tb = -1e20; // large negative
-	while (stack_idx)
-	{
-		int boxidx = stack[stack_idx - 1]; // pop off top of stack
-		stack_idx--;
-		if (!(bvhData.bvhNodes.contents[boxidx].u.leaf.count & 0x80000000))
-		{
-			// inner
-			Box b;
-			b.min = bvhData.bvhNodes.contents[boxidx].min;
-			b.max = bvhData.bvhNodes.contents[boxidx].max;
-			if (b.intersect(r_in))
-			{
-				stack[stack_idx++] = bvhData.bvhNodes.contents[boxidx].u.inner.left; // push right and left onto stack
-				stack[stack_idx++] = bvhData.bvhNodes.contents[boxidx].u.inner.right;
-			}
-		}
-		else
-		{
-			// leaf
-			for (int i = bvhData.bvhNodes.contents[boxidx].u.leaf.offset;
-			     i < bvhData.bvhNodes.contents[boxidx].u.leaf.offset + (bvhData.bvhNodes.contents[boxidx].u.leaf.count & 0x7fffffff);
-			     i++)
-			{
-				// intersect all triangles in this box
-				if ((d = bvhData.triangles.contents[i].intersect(r_in)) && d > -1e19)
-				{
-
-					if (d<t && d>0.001)
-					{
-						t = d;
-						id = i;
-					}
-					else if (d>tb && d<0.001)
-					{
-						tb = d;
-					}
-				}
-			}
-		}
-	}
-	return id;
-}
-
-__device__ bool castRay2(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
+__device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
 									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
-
+	
 	RayHit tempResult;
-	// auto triangleIndex = intersectTriangles(ray, closestHitDistance, scene.triangleBvh);
-	// if (triangleIndex >= 0)
-	// {
-	// 	result->pointOfHit = ray.pointAtDistance(closestHitDistance);
-	// 	result->normal = getNormalAwayFromRay(ray, scene.triangleBvh.triangles.contents[triangleIndex]);
-	// 	result->material = scene.triangleBvh.triangles.contents[triangleIndex].material;
-	// }
-	for (int i = 0; i < scene.triangleBvh.triangles.size; ++i)
+	auto intersectedTriangle = scene.triangleBvh.intersectRay(ray, closestHitDistance);
+	if (intersectedTriangle != nullptr)
 	{
-		if (intersectRayAndTriangle(ray, scene.triangleBvh.triangles.contents[i], &tempResult))
-		{
-			float distanceSquared = lengthSquared(ray.origin - tempResult.pointOfHit);
-			if (closestHitDistance > distanceSquared)
-			{
-				closestHitDistance = distanceSquared;
-				*result = tempResult;
-			}
-		}
+		result->pointOfHit = ray.pointAtDistance(closestHitDistance);
+		result->normal = getNormalAwayFromRay(ray, *intersectedTriangle);
+		result->material = intersectedTriangle->material;
 	}
 
 	for (int i = 0; i < scene.spheres.size; ++i)
 	{
 		if (intersectRayAndSphere(ray, scene.spheres.contents[i], &tempResult))
 		{
-			float distanceSquared = lengthSquared(ray.origin - tempResult.pointOfHit);
+			float distanceSquared = length(ray.origin - tempResult.pointOfHit);
 			if (closestHitDistance > distanceSquared)
 			{
 				closestHitDistance = distanceSquared;
@@ -217,7 +107,9 @@ __device__ bool castRay2(const Ray& ray, const SceneInfo& scene, RayHit*  result
 	}
 
 	return closestHitDistance < 1e19;
-}__device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
+}
+
+__device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
 									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
 

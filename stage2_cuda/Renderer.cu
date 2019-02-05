@@ -3,10 +3,10 @@
 #include "Helpers.h"
 #include "Geometry.h"
 #include <iostream>
-#include <glm/glm.hpp>
 #include "BVH.h"
 #include "ply.h"
 #include "cudaRenderer.h"
+#include "GlHelp.h"
 
 
 // Photon-defined SDL messages
@@ -44,11 +44,6 @@ void FpsCounter::secondPassed()
 void FpsCounter::frameRendered()
 {
 	framesRendered += 1;
-}
-
-void Renderer::pushCameraInfoToGPU()
-{
-	camera->getGlslInfo().setInGlsl(glProgramId);
 }
 
 void Renderer::initGL()
@@ -102,7 +97,7 @@ Scene Renderer::loadModel()
 	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
 	// is hardcoded (our model loading code is still in production).
 	
-	std::vector<Triangle> triangles; // = loadTriangles("bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
+	std::vector<Triangle> triangles = loadTriangles("models/bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
 
 	Scene scene;
 
@@ -355,14 +350,19 @@ Scene Renderer::loadModel()
 	return scene;
 }
 
+float degToRadians(float a)
+{
+	return 0.017453292 * a;
+}
+
 Renderer::Renderer(const RendererConfig& config)
 {
 	this->config = config;
 
 	// TODO(#2): The input file should specify information about camera. This will be hardcoded for
 	// now.
-	this->camera = Camera::fromHorizontalFov(glm::vec3(0, 0, -1), glm::vec3(0, 0, 1),
-		glm::vec3(0, 1, 0), glm::radians(config.horizontalFovDegrees),
+	this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -1), make_float3(0, 0, 1),
+		make_float3(0, 1, 0), degToRadians(config.horizontalFovDegrees),
 		((float) config.outputWidth) / config.outputHeight);
 }
 
@@ -440,7 +440,6 @@ void Renderer::loop()
 				SDL_SetRelativeMouseMode(SDL_TRUE);
 				camera->absTurnRight(event.motion.xrel * 0.001);
 				camera->absTurnUp(event.motion.yrel * 0.001);
-				pushCameraInfoToGPU();
 			}
 
 			if (event.type == SDL_USEREVENT)
@@ -449,7 +448,6 @@ void Renderer::loop()
 				{
 				case UPDATE_TIMER:
 					userInputState.updateCamera(camera.get());
-					pushCameraInfoToGPU();
 					break;
 				case FPS_COUNTER_TIMER:
 					fpsCounter.secondPassed();
@@ -475,7 +473,6 @@ void Renderer::run()
 {
 	initGL();
 	loadModel();
-	pushCameraInfoToGPU();
 	loop();
 	cleanup();
 }

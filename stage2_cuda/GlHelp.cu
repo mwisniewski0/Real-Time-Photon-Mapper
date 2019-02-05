@@ -3,24 +3,6 @@
 #include <memory>
 
 namespace glhelp {
-
-	void CameraInfo::setInGlsl(GLuint programID, const char* topLeftUniformName,
-		const char* topRightUniformName, const char* bottomLeftUniformName,
-		const char* bottomRightUniformName, const char* eyePosUniformName)
-	{
-		glUniform3f(glGetUniformLocation(programID, topLeftUniformName),
-			screenTopLeft.x, screenTopLeft.y, screenTopLeft.z);
-		glUniform3f(glGetUniformLocation(programID, topRightUniformName),
-			screenTopRight.x, screenTopRight.y, screenTopRight.z);
-		glUniform3f(glGetUniformLocation(programID, bottomLeftUniformName),
-			screenBottomLeft.x, screenBottomLeft.y, screenBottomLeft.z);
-		glUniform3f(glGetUniformLocation(programID, bottomRightUniformName),
-			screenBottomRight.x, screenBottomRight.y, screenBottomRight.z);
-		glUniform3f(glGetUniformLocation(programID, eyePosUniformName),
-			eyePos.x, eyePos.y, eyePos.z);
-	}
-
-
 	GLint compileShader(const std::string& shaderSource, GLuint shaderID)
 	{
 		GLint status = GLEW_OK;

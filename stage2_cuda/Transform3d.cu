@@ -2,7 +2,7 @@
 #include <exception>
 #include <stdexcept>
 
-float Transform3D::getAffineVectorCoord(const glm::vec3& vector, int index)
+float Transform3D::getAffineVectorCoord(const float3& vector, int index)
 {
 	switch (index)
 	{
@@ -18,7 +18,7 @@ float Transform3D::getAffineVectorCoord(const glm::vec3& vector, int index)
 	throw std::runtime_error("Index out of bounds");
 }
 
-glm::vec3 Transform3D::transform(const glm::vec3& toTransform)
+float3 Transform3D::transform(const float3& toTransform)
 {
 	float affineCoords[4] = {0,0,0,0};
 	for (int y = 0; y < 4; ++y)
@@ -28,20 +28,20 @@ glm::vec3 Transform3D::transform(const glm::vec3& toTransform)
 			affineCoords[y] += matrix[x][y] * getAffineVectorCoord(toTransform, x);
 		}
 	}
-	return glm::vec3(
+	return make_float3(
 		affineCoords[0] / affineCoords[3],
 		affineCoords[1] / affineCoords[3],
 		affineCoords[2] / affineCoords[3]
 	);
 }
 
-Transform3D Transform3D::rotateCCWAroundAxis(const glm::vec3& axisStart, const glm::vec3& axisEnd, float angle)
+Transform3D Transform3D::rotateCCWAroundAxis(const float3& axisStart, const float3& axisEnd, float angle)
 {
 	float cosx = cos(angle);
 	float sinx = sin(angle);
 
 	// Unit vector from origin
-	glm::vec3 a = glm::normalize(axisEnd - axisStart);
+	float3 a = normalize(axisEnd - axisStart);
 
 	Transform3D result;
 	result.matrix = {
@@ -86,7 +86,7 @@ Transform3D Transform3D::multiply(const Transform3D& other) const
 	return result;
 }
 
-Transform3D Transform3D::getTranslateInstance(const glm::vec3& translation)
+Transform3D Transform3D::getTranslateInstance(const float3& translation)
 {
 	Transform3D result;
 	result.matrix[0][0] = 1;

@@ -1,28 +1,6 @@
 #include "geometry.h"
 #include <vector>
 
-__device__ __host__ float Triangle::intersect(const Ray& r) const
-{
-	float3 tvec = r.origin - p;
-	float3 pvec = cross(r.dir, v1);
-	float det = dot(v0, pvec);
-
-	// TODO:
-	det = 1.0 / det;
-
-	float u = dot(tvec, pvec) * det;
-	if (u < 0 || u > 1)
-		return -1e20;
-
-	float3 qvec = cross(tvec, v0);
-
-	float v = dot(r.dir, qvec) * det;
-
-	if (v < 0 || (u + v) > 1)
-		return -1e20;
-
-	return dot(v1, qvec) * det;
-}
 
 BoundingBox Triangle::boundingBoxForMany(const std::vector<Triangle>& triangles)
 {
@@ -48,6 +26,11 @@ BoundingBox BoundingBox::merge(const float3& v) const
 	result.minCoords = minf3(this->minCoords, v);
 	result.maxCoords = maxf3(this->maxCoords, v);
 	return result;
+}
+
+float BoundingBox::getArea()
+{
+	return dot((maxCoords - minCoords), (maxCoords - minCoords));
 }
 
 Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, Material material)

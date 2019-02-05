@@ -1,8 +1,7 @@
 #ifndef TRANSFORM_3D_INCLUDED__
 #define TRANSFORM_3D_INCLUDED__
 
-#include <glm/vec3.hpp>
-#include <glm/glm.hpp>
+#include "cutil_math.h"
 #include <array>
 
 /**
@@ -11,7 +10,7 @@
 class Transform3D {
 	std::array<std::array<float, 4>, 4> matrix;
 
-	float getAffineVectorCoord(const glm::vec3& vector, int index);
+	float getAffineVectorCoord(const float3& vector, int index);
 
 	Transform3D()
 	{
@@ -25,7 +24,7 @@ public:
 	* @param toTransform The point to transform
 	* @return The point after the transformation
 	*/
-	glm::vec3 transform(const glm::vec3& toTransform);
+	float3 transform(const float3& toTransform);
 
 	/**
 	* Builds a Transform3D that rotates around the specified axis counter clock-wise by the provided angle.
@@ -34,7 +33,7 @@ public:
 	* @param angle The angle of the rotation. The input will be treated as if it was in radians.
 	* @return The rotation matrix
 	*/
-	static Transform3D rotateCCWAroundAxis(const glm::vec3& axisStart, const glm::vec3& axisEnd, float angle);
+	static Transform3D rotateCCWAroundAxis(const float3& axisStart, const float3& axisEnd, float angle);
 
 	/**
 	* Multiplies this matrix by the provided matrix on the right. The result will be saved in this matrix.
@@ -56,7 +55,7 @@ public:
 	*/
 	Transform3D multiply(const Transform3D& other) const;
 
-	static Transform3D getTranslateInstance(const glm::vec3& translation);
+	static Transform3D getTranslateInstance(const float3& translation);
 
 	/**
 	* Creates a new identity matrix

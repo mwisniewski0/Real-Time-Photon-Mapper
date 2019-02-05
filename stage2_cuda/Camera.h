@@ -2,8 +2,7 @@
 #define CAMERA_H_INCLUDED__
 
 #include <memory>
-#include "GlHelp.h"
-#include <glm/vec3.hpp>
+#include "cutil_math.h"
 #include <cuda_runtime_api.h>
 
 struct CudaCamera
@@ -17,26 +16,25 @@ struct CudaCamera
 
 class Camera
 {
-	glm::vec3 position;
-	glm::vec3 lookingAt;
-	glm::vec3 upDir;
-	glm::vec3 rightDir;
+	float3 position;
+	float3 lookingAt;
+	float3 upDir;
+	float3 rightDir;
 
 	float fovX;
 	float fovY;
 
-	glm::vec3 vectorToScreen() const;
+	float3 vectorToScreen() const;
 	void refreshRightDir();
 
 public:
-	Camera(glm::vec3 position, glm::vec3 lookingAt, glm::vec3 upDir, float horizontalFov,
+	Camera(float3 position, float3 lookingAt, float3 upDir, float horizontalFov,
 		float verticalFov);
 
-	static std::unique_ptr<Camera> fromHorizontalFov(glm::vec3 position, glm::vec3 lookingAt,
-		glm::vec3 upDir, float horizontalFov, float aspectRatio);
+	static std::unique_ptr<Camera> fromHorizontalFov(float3 position, float3 lookingAt,
+		float3 upDir, float horizontalFov, float aspectRatio);
 
 	CudaCamera getCudaInfo() const;
-	glhelp::CameraInfo getGlslInfo();
 	void moveForward(float delta);
 	void moveBackward(float delta);
 	void moveLeft(float delta);

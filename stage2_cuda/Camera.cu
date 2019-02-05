@@ -2,17 +2,17 @@
 #include "Transform3d.h"
 #include <memory>
 
-glm::vec3 Camera::vectorToScreen() const
+float3 Camera::vectorToScreen() const
 {
 	return this->lookingAt - this->position;
 }
 
 void Camera::refreshRightDir()
 {
-	this->rightDir = glm::normalize(glm::cross(this->vectorToScreen(), this->upDir));
+	this->rightDir = normalize(cross(this->vectorToScreen(), this->upDir));
 }
 
-Camera::Camera(glm::vec3 position, glm::vec3 lookingAt, glm::vec3 upDir, float horizontalFov, float verticalFov)
+Camera::Camera(float3 position, float3 lookingAt, float3 upDir, float horizontalFov, float verticalFov)
 {
 	this->position = position;
 	this->lookingAt = lookingAt;
@@ -23,8 +23,8 @@ Camera::Camera(glm::vec3 position, glm::vec3 lookingAt, glm::vec3 upDir, float h
 	refreshRightDir();
 }
 
-std::unique_ptr<Camera> Camera::fromHorizontalFov(glm::vec3 position, glm::vec3 lookingAt,
-	glm::vec3 upDir, float horizontalFov,
+std::unique_ptr<Camera> Camera::fromHorizontalFov(float3 position, float3 lookingAt,
+	float3 upDir, float horizontalFov,
 	float aspectRatio)
 {
 	float widthAtDistance1 = tan(horizontalFov / 2.0f) * 2.0f;
@@ -33,7 +33,7 @@ std::unique_ptr<Camera> Camera::fromHorizontalFov(glm::vec3 position, glm::vec3 
 	return std::make_unique<Camera>(position, lookingAt, upDir, horizontalFov, verticalFov);
 }
 
-float3 toFloat3(const glm::vec3& vec)
+float3 toFloat3(const float3& vec)
 {
 	float3 res;
 	res.x = vec.x;
@@ -47,7 +47,7 @@ CudaCamera Camera::getCudaInfo() const
 	CudaCamera result;
 	result.eyePos = toFloat3(position);
 
-	float distanceToScreen = glm::length(vectorToScreen());
+	float distanceToScreen = length(vectorToScreen());
 	auto horizontalStretch = distanceToScreen * tanf(fovX / 2.f) * rightDir;
 	auto verticalStretch = distanceToScreen * tanf(fovY / 2.f) * upDir;
 
@@ -59,26 +59,9 @@ CudaCamera Camera::getCudaInfo() const
 	return result;
 }
 
-glhelp::CameraInfo Camera::getGlslInfo()
-{
-	glhelp::CameraInfo result;
-	result.eyePos = position;
-
-	float distanceToScreen = glm::length(vectorToScreen());
-	auto horizontalStretch = distanceToScreen * tanf(fovX / 2.f) * rightDir;
-	auto verticalStretch = distanceToScreen * tanf(fovY / 2.f) * upDir;
-
-	result.screenBottomLeft = lookingAt - horizontalStretch - verticalStretch;
-	result.screenBottomRight = lookingAt + horizontalStretch - verticalStretch;
-	result.screenTopLeft = lookingAt - horizontalStretch + verticalStretch;
-	result.screenTopRight = lookingAt + horizontalStretch + verticalStretch;
-
-	return result;
-}
-
 void Camera::moveForward(float delta)
 {
-	auto displacement = glm::normalize(lookingAt - position) * delta;
+	auto displacement = normalize(lookingAt - position) * delta;
 	position += displacement;
 	lookingAt += displacement;
 }
@@ -117,7 +100,7 @@ void Camera::turnUp(float rad)
 	lookingAt =
 		Transform3D::rotateCCWAroundAxis(position, position + rightDir, rad).transform(lookingAt);
 	upDir =
-		Transform3D::rotateCCWAroundAxis(glm::vec3(0), rightDir, rad).transform(upDir);
+		Transform3D::rotateCCWAroundAxis(make_float3(0), rightDir, rad).transform(upDir);
 	refreshRightDir();
 }
 
@@ -134,13 +117,13 @@ void Camera::tiltLeft(float rad)
 void Camera::tiltRight(float rad)
 {
 	upDir =
-		Transform3D::rotateCCWAroundAxis(glm::vec3(0), vectorToScreen(), rad).transform(upDir);
+		Transform3D::rotateCCWAroundAxis(make_float3(0), vectorToScreen(), rad).transform(upDir);
 	refreshRightDir();
 }
 
 void Camera::absTurnRight(float rad)
 {
-	auto transform = Transform3D::rotateCCWAroundAxis(position, position + glm::vec3(0, 1, 0), rad);
+	auto transform = Transform3D::rotateCCWAroundAxis(position, position + make_float3(0, 1, 0), rad);
 	auto temp = transform.transform(lookingAt + upDir);
 	lookingAt = transform.transform(lookingAt);
 	upDir = temp - lookingAt;

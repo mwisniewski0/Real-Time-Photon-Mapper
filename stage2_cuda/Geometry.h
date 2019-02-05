@@ -16,6 +16,7 @@ struct BoundingBox
 
 	BoundingBox merge(const BoundingBox& other) const;
 	BoundingBox merge(const float3& v) const;
+	float getArea();
 };
 
 struct Material {
@@ -116,8 +117,30 @@ struct Triangle : public Shape {
 	float3 normal; //precompute and store. may not be faster needs testing
 	Material material;
 
-	// use moller-trumbore algorithm to intersect quickly
-	__device__ __host__ float Triangle::intersect(const Ray& r) const;
+	// Moller-Trumbore algorithm for triangle-ray intersection. Returns < 0 if no intersection
+	// occurred. If intersection occured the result will be the distance of the intersection point
+	// to the ray origin
+	__device__ float Triangle::intersect(const Ray& r) const
+	{
+		float3 tvec = r.origin - p;
+		float3 pvec = cross(r.dir, v1);
+		float det = dot(v0, pvec);
+
+		det = 1.0 / det;
+
+		float u = dot(tvec, pvec) * det;
+		if (u < 0 || u > 1)
+			return -1e20;
+
+		float3 qvec = cross(tvec, v0);
+
+		float v = dot(r.dir, qvec) * det;
+
+		if (v < 0 || (u + v) > 1)
+			return -1e20;
+
+		return dot(v1, qvec) * det;
+	}
 
 	static BoundingBox boundingBoxForMany(const std::vector<Triangle>& triangles);
 

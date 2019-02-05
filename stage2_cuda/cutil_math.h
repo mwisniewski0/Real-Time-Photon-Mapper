@@ -20,8 +20,7 @@
 *    Thanks to Linh Hah for additions and fixes.
 */
 
-#ifndef HELPER_MATH_H
-#define HELPER_MATH_H
+#pragma once
 
 #include "cuda_runtime.h"
 
@@ -1464,5 +1463,3 @@ inline __host__ __device__ float minf(float a, float b) {
 inline __host__ __device__ float maxf(float a, float b) {
 	return a < b ? b : a;
 }
-
-#endif
