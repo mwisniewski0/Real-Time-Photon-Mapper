@@ -3,47 +3,6 @@
 #include "../common/bvh.h"
 #include "cudaHelpers.h"
 
-
-// Representation of BVH nodes for GPUs. This is exactly 32 bytes which is the size of an L2 cache
-// line.
-struct GpuBvhNode {
-	float3 min;
-	float3 max;
-
-	union {
-		struct {
-			unsigned left;
-			unsigned right;
-		} inner;
-		struct {
-			unsigned count;
-			unsigned offset;
-		} leaf;
-	}u;
-
-	__host__ __device__ bool isLeaf() const
-	{
-		return u.leaf.count & (1 << 31);
-	}
-
-	void setAsLeaf()
-	{
-		u.leaf.count |= (1 << 31);
-	}
-
-	void setCount(const unsigned& newCount)
-	{
-		u.leaf.count |= newCount;
-	}
-
-	__host__ __device__ unsigned getCount() const
-	{
-		return u.leaf.count & 0x7fffffff;
-	}
-
-	void setBoundingBox(BoundingBox box);
-};
-
 struct BVHGpuData
 {
 	GPUVector<GpuBvhNode> bvhNodes;
@@ -96,6 +55,8 @@ struct BVHGpuData
 		}
 		return result;
 	}
+
+	void release();
 };
 
 BVHGpuData makeGpuBvh(const BVHNode* root);

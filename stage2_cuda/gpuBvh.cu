@@ -1,21 +1,5 @@
 #include "gpuBvh.h"
 
-
-struct BVHGpuDataRaw
-{
-	std::vector<GpuBvhNode> bvhNodes;
-	std::vector<Triangle> triangles;
-
-	BVHGpuData toGpu() const
-	{
-		BVHGpuData data;
-		data.triangles = vectorToGpu(triangles);
-		data.bvhNodes = vectorToGpu(bvhNodes);
-		return data;
-	}
-};
-
-
 void makeGpuBvhInternal(const BVHNode* node, BVHGpuDataRaw* data)
 {
 	data->bvhNodes.emplace_back();
@@ -52,10 +36,19 @@ void GpuBvhNode::setBoundingBox(BoundingBox box)
 	max = box.maxCoords;
 }
 
+void BVHGpuData::release()
+{
+	triangles.release();
+	bvhNodes.release();
+}
 
 BVHGpuData makeGpuBvh(const BVHNode* root)
 {
 	BVHGpuDataRaw data;
 	makeGpuBvhInternal(root, &data);
-	return data.toGpu();
+
+	BVHGpuData result;
+	result.triangles = vectorToGpu(data.triangles);
+	result.bvhNodes = vectorToGpu(data.bvhNodes);
+	return result;
 }
