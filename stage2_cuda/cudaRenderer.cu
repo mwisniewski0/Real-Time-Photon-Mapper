@@ -82,7 +82,7 @@ __device__ float lengthSquared(float3 v)
 __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
 									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
-	
+
 	RayHit tempResult;
 	auto intersectedTriangle = scene.triangleBvh.intersectRay(ray, closestHitDistance);
 	if (intersectedTriangle != nullptr)
@@ -168,57 +168,122 @@ __device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) 
 	return illumination;
 }
 
-__device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
-	const int MAX_RAY_BOUNCE = 20;
+__device__ float3 refract(const float3& in, const float3& normal, float eta)
+{
+	float nDotI = dot(in, normal);
+	float k = 1.f - eta * eta * (1.f - nDotI * nDotI);
+	if (k < 0.f)
+		return make_float3(0.f, 0.f, 0.f);
+	else
+		return eta * in - (eta * nDotI + sqrtf(k)) * normal;
+}
 
-	float3 currentModifier = make_float3(1.0, 1.0, 1.0);
+struct RaySplit
+{
+	Ray ray;
+	float3 currentModifier;
+};
+
+__device__ float calculateReflectRatio(float n1, float n2, const float3& normal, const float3& incident)
+{
+	// Using Schlick's approximation
+
+	float r0 = (n1 - n2) / (n1 + n2);
+	r0 *= r0;
+	float cosX = -dot(normal, incident);
+	if (n1 > n2)
+	{
+		float n = n1 / n2;
+		float sinT2 = n*n*(1.0 - cosX*cosX);
+		// Total internal reflection
+		if (sinT2 > 1.0)
+			return 1.0;
+		cosX = sqrt(1.0 - sinT2);
+	}
+	float x = 1.0 - cosX;
+	float ret = r0 + (1.0 - r0)*(x*x*x*x*x);
+
+	return ret;
+}
+
+__device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
+	const int MAX_RAY_BOUNCE = 15;
+
+	RaySplit rays[MAX_RAY_BOUNCE];
+	rays[0] = { ray, 1.0f, 1.0f, 1.0f };
+	int lastRay = 0;
+
+	float3 currentIllumination = make_float3(0);
 
 	for (int bounce = 0; bounce < MAX_RAY_BOUNCE; ++bounce)
 	{
+		if (bounce > lastRay) break;
+
+		const auto& split = rays[bounce];
+		const auto& r = split.ray;
+
 		RayHit hit;
-		if (!castRay(ray, scene, &hit))
+		if (!castRay(r, scene, &hit))
 		{
 			break;
 		}
 
 		if (hit.material.type == 1)
 		{
-			// Specular
-			currentModifier *= hit.material.specularReflectivity;
-			ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
-			ray.dir = reflect(ray.dir, hit.normal);
-
+			// Reflective
+			++lastRay;
+			if (lastRay == MAX_RAY_BOUNCE) continue;
+			rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity;
+			rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
+			rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
 		}
 		else if (hit.material.type == 2)
 		{
-			// // Refractive
-			// if (dot(hit.normal, ray.dir) < 0) {
-			// 	// Ray comes from the inside
-			// 	currentModifier *= hit.material.specularReflectivity;
-			// 	ray.origin = hit.pointOfHit + (-hit.normal * EPSILON);
-			// 	ray.dir = refract(ray.dir, hit.normal, 1.0 / hit.material.refractiveIndex);
-			// }
-			// else {
-			// 	// Ray comes from the outside
-			// 	currentModifier *= v3(hit.material.specularReflectivity);
-			// 	ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
-			// 	ray.dir = refract(ray.dir, -hit.normal, 1.0 / hit.material.refractiveIndex);
-			// }
-			return make_float3(1.0, 1.0, 0.0);
+			// Refractive
+			if (dot(hit.normal, r.dir) < 0) {
+				float reflectRatio = calculateReflectRatio(AIR_REFRACTIVE_INDEX, hit.material.refractiveIndex, hit.normal, r.dir);
+
+				++lastRay;
+				if (lastRay == MAX_RAY_BOUNCE) continue;
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * (1.0f - reflectRatio);
+				rays[lastRay].ray.origin = hit.pointOfHit + (-hit.normal * EPSILON);
+				rays[lastRay].ray.dir = refract(r.dir, hit.normal, 1.0 / hit.material.refractiveIndex);
+
+				++lastRay;
+				if (lastRay == MAX_RAY_BOUNCE) continue;
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * reflectRatio;
+				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
+				rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
+			}
+			else {
+				float reflectRatio = calculateReflectRatio(hit.material.refractiveIndex, AIR_REFRACTIVE_INDEX, -hit.normal, r.dir);
+
+				++lastRay;
+				if (lastRay == MAX_RAY_BOUNCE) continue;
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * (1.0f - reflectRatio);
+				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
+				rays[lastRay].ray.dir = refract(r.dir, -hit.normal, 1.0 / hit.material.refractiveIndex);
+
+				++lastRay;
+				if (lastRay == MAX_RAY_BOUNCE) continue;
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * reflectRatio;
+				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
+				rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
+			}
 		}
 		else
 		{
 			// Diffuse
-			return currentModifier * getHitIllumination(scene, hit);
+			currentIllumination += split.currentModifier * getHitIllumination(scene, hit);
 		}
 	}
 
-	return make_float3(0.0, 0.0, 0.0);
+	return currentIllumination;
 }
 
 
 __global__ void renderingKernel(CudaCamera cam, SceneInfo scene, unsigned screenWidth,
-                                unsigned screenHeight, cudaSurfaceObject_t output)
+	unsigned screenHeight, cudaSurfaceObject_t output)
 {
 	// Calculate surface coordinates
 	unsigned int xPixel = blockIdx.x * blockDim.x + threadIdx.x;
@@ -261,7 +326,7 @@ T* loadVectorToGpu(const std::vector<T> v)
 	T* device_mem;
 	auto err = cudaMalloc((void**)(&device_mem), v.size() * sizeof(T));
 	err = cudaMemcpy((void*)(device_mem), (void*)(&(v[0])),
-	                 v.size() * sizeof(T), cudaMemcpyHostToDevice);
+		v.size() * sizeof(T), cudaMemcpyHostToDevice);
 	return device_mem;
 }
 
@@ -286,7 +351,7 @@ void CudaRenderer::renderFrame(const Camera& camera)
 		{
 			dim3 block(8, 8, 1);
 			dim3 grid(outputWidth / block.x, outputHeight / block.y, 1);
-			renderingKernel<<<grid, block>>>(camera.getCudaInfo(), scene, outputWidth, outputHeight, viewCudaSurfaceObject);
+			renderingKernel << <grid, block >> >(camera.getCudaInfo(), scene, outputWidth, outputHeight, viewCudaSurfaceObject);
 		}
 		cudaDestroySurfaceObject(viewCudaSurfaceObject);
 	}

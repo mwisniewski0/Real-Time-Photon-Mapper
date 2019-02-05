@@ -97,7 +97,7 @@ Scene Renderer::loadModel()
 	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
 	// is hardcoded (our model loading code is still in production).
 	
-	std::vector<Triangle> triangles = loadTriangles("models/bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
+	std::vector<Triangle> triangles;// = loadTriangles("models/bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
 
 	Scene scene;
 
@@ -328,17 +328,17 @@ Scene Renderer::loadModel()
 		{ { 0,0,0 },
 		{ 0.77f, 0.83f, 0.81f }, 2.5f, 1 },
 	};
-	// scene.spheres.emplace_back();
-	// scene.spheres[scene.spheres.size() - 1] = {
-	// 	{ 0, -0.3f, 0 }, 0.2f,
-	// 	{ { 0,0,0 },
-	// 	{ 0.77f, 0.83f, 0.81f }, 2.5f, 2 },
-	// };
+	scene.spheres.emplace_back();
+	scene.spheres[scene.spheres.size() - 1] = {
+		{ 0, -0.3f, 0 }, 0.2f,
+		{ { 0,0,0 },
+		{ 0.77f, 0.83f, 0.81f }, 1.3f, 2 },
+	};
 	scene.spheres.emplace_back();
 	scene.spheres[scene.spheres.size() - 1] = {
 		{ 0.5f, 0.3f, 0 }, 0.2f,
 		{ { 0,0,0 },
-		{ 0.77f, 0.83f, 0.81f }, 2.5f, 1 },
+		{ 0.09f, 0.83f, 0.81f }, 2.5f, 1 },
 	};
 	scene.triangles = std::move(triangles);
 
