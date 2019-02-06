@@ -4,7 +4,7 @@
 #include <random>
 #include <vector>
 
-#include "../common/kd-tree.h"
+#include "../cuda_common/kd-tree.h"
 
 std::default_random_engine gen;
 

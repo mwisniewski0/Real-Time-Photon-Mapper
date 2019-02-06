@@ -5,13 +5,13 @@
 
 #include <climits>
 
-#include "photon.h"
-#include "kd-tree.h"
+#include "../common/photon.h"
+#include "../cuda_common/kd-tree.h"
 
 #define DIMENSION 3
 
 //Returns the splitting plane on level i of the tree
-inline uint GET_PLANE(uint i){
+inline __host__ __device__ uint GET_PLANE(uint i){
     uint count = 0;
     while (i>>=1) ++count;
     return count%DIMENSION;
@@ -115,7 +115,7 @@ __device__ void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint*
     StackNode stack[64];
     int stackIdx = 0;
     stack[stackIdx] = {0,false};
-    float minDists[num];
+    float* minDists =(float*) malloc(num*sizeof(float));
     for (uint i = 0; i<num; ++i){
 	minDists[i] = 1e20;
 	closest[i] = 0;
@@ -183,6 +183,7 @@ __device__ void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint*
 	    }
 	}
     }
+    free(minDists);
 }
 
 //Density of photons around point.
