@@ -24,4 +24,6 @@ void sortPhotons(std::vector<Photon>& photonList);
 
 __device__ void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint* closest, uint num);
 
+__device__ float3 gatherPhotons(float3 point, Photon* map, uint len)
+
 #endif

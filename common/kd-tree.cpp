@@ -185,3 +185,16 @@ __device__ void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint*
     }
 }
 
+//Density of photons around point.
+//len is size of photon map
+__device__ float3 gatherPhotons(float3 point, Photon* map, uint len){
+    uint nearest[512];
+    nearestNeighbor(map, len, point, nearest, 512);
+    float3 total = make_float3(0,0,0);
+    for (int i = 0; i<512; ++i){
+	total += map[nearest[i]].power;
+    }
+    float dist = length(point - nearest[511]);
+    return total/dist/dist;
+}
+
