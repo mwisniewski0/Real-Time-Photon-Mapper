@@ -4,7 +4,7 @@
 #include <random>
 #include <vector>
 
-#include "kd-tree.h"
+#include "../common/kd-tree.h"
 
 std::default_random_engine gen;
 
@@ -43,13 +43,13 @@ void testSort(){
 }
 
 void outputData(){;
-    uint k = 1;
+    uint k = 512;
     std::cout << "Num Points" << "|" << "Sort Time" << "|" << "Sort Scaled" <<
 	"|" << "Search Time" << "|" << "Search Scaled" << std::endl;
-    bool printDetails = true;
+    bool printDetails = false;
     uint numSamples = 10;
-    for (int i = 1; i <= 5; ++i){
-	uint len = (1<<(4*i));
+    for (int i = 5; i <= 10; ++i){
+	uint len = (1<<(2*i));
 	double avgSortTime = 0;
 	double avgSortScale = 0;
 	double avgSearchTime = 0;
@@ -63,7 +63,7 @@ void outputData(){;
 	    std::chrono::duration<double> diff = t1-t0;
 	    double secs = diff.count();
 	    avgSortTime+=secs;
-	    double scale = (double)((t1-t0).count())/len/(4*i)/(4*i);
+	    double scale = (double)((t1-t0).count())/len/(2*i)/(2*i);
 	    avgSortScale += scale;
 	    if(printDetails){
 		std::cout << std::setw(10) << len << "|" <<
@@ -80,7 +80,7 @@ void outputData(){;
 	    diff = t1-t0;
 	    secs = diff.count();
 	    avgSearchTime += secs;
-	    scale = (double)((t1-t0).count())/(4*i);
+	    scale = (double)((t1-t0).count())/(2*i);
 	    avgSearchScale += scale;
 	    if(printDetails){
 		std::cout << std::setw(11) << secs*1000*1000 << "|"  << std::setw(13) <<

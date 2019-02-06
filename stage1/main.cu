@@ -8,6 +8,7 @@
 #include <curand_kernel.h>
 
 #include "helper_math.h"
+#include "../common/photon.h"
 
 #define WIDTH 500
 #define HEIGHT 500

@@ -1,47 +1,40 @@
-#ifndef __KD_TREE
-#define __KD_TREE
-
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <vector>
 
 #include <climits>
 
 #include "photon.h"
+#include "kd-tree.h"
 
 #define DIMENSION 3
 
+//Returns the splitting plane on level i of the tree
 inline uint GET_PLANE(uint i){
     uint count = 0;
     while (i>>=1) ++count;
     return count%DIMENSION;
 }
 
-struct Node{
-    Photon* photon;
-    std::unique_ptr<Node> left;
-    std::unique_ptr<Node> right;
-    uint dimension;
-};
-
+//Sort an array of photons in the x, y, and z directions respectively
 struct{
     bool operator()(const Photon& a, const Photon& b){
 	return a.pos.x < b.pos.x;
     }
 } sortX;
-
 struct{
     bool operator()(const Photon& a, const Photon& b){
 	return a.pos.y < b.pos.y;
     }
 } sortY;
-
 struct{
     bool operator()(const Photon& a, const Photon& b){
 	return a.pos.z < b.pos.z;
     }
 } sortZ;
 
+//Recursively go through tree and print the position of each photon
 void printTree(Node& head){
     std::cout << head.photon->pos.x << " " << head.photon->pos.y << " " << head.photon->pos.z << std::endl;
     if (head.left){
@@ -52,7 +45,7 @@ void printTree(Node& head){
 	std::cout << "r ";
 	printTree(*(head.right));
     }
-    }
+}
 
 //This is O(nlog^2n). It can be done in O(nlogn) but since this is done in preprocesing stage, I don't
 //really care about going fast and this way is easier to code.
@@ -85,6 +78,8 @@ std::unique_ptr<Node> buildTree(Photon* photons, int len, uint dimension){
     return node;
 }
 
+//Copy kd-tree as structure of nodes with pointers into a continguous chunk of memory
+//Left child is 2*i+1 and right is 2*i + 2
 void treeToArray(Photon* photon, Node& node, uint idx, uint max){
     Photon* p= node.photon;
     photon[idx] = *(p);
@@ -100,21 +95,23 @@ void treeToArray(Photon* photon, Node& node, uint idx, uint max){
     }
 }
 
+//Take a list of photons, turn it into a kd-tree and copy it back to the original vector
+//Note that in order to make it balance, the vector may end up a little longer than it started
 void sortPhotons(std::vector<Photon>& photonList){
     std::vector<Photon> temp(1<<((int)std::ceil(log2(photonList.size()))));
     std::unique_ptr<Node> photonMap = buildTree(photonList.data(), photonList.size(), 0);
     treeToArray(temp.data(), *photonMap, 0, temp.size());
-    //std::cout << temp.size() << std::endl;
-    photonList = temp;
+    photonList = std::move(temp);
 }
 
+//These are the only important things to store to make the search iterative
 struct StackNode{
     uint photonIdx;
     bool searchedFirst;
 };
 
 //Use c-array here so we don't have to deal with std::vector in CUDA
-void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint* closest, uint num){
+__device__ void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint* closest, uint num){
     StackNode stack[64];
     int stackIdx = 0;
     stack[stackIdx] = {0,false};
@@ -188,4 +185,3 @@ void nearestNeighbor(Photon* photonMap, uint len, float3 point, uint* closest, u
     }
 }
 
-#endif
