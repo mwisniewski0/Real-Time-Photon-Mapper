@@ -9,18 +9,10 @@
 #include "cuda_gl_interop.h"
 #include "../common/geometry.h"
 #include "Camera.h"
-#include "cudaHelpers.h"
+#include "../cuda_common/cudaHelpers.h"
 #include "../common/scene.h"
-#include "gpuBvh.h"
-
-struct SceneInfo
-{
-	GPUVector<Sphere> spheres;
-	GPUVector<PointLightSource> lights;
-	BVHGpuData triangleBvh;
-
-	static SceneInfo fromScene(const Scene& scene);
-};
+#include "../cuda_common/gpuBvh.h"
+#include "../cuda_common/gpuScene.h"
 
 class CudaRenderer
 {

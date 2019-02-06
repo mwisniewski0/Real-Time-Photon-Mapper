@@ -9,7 +9,8 @@
 #include "../common/geometry.h"
 #include "../common/cutil_math.h"
 #include <iostream>
-#include "gpuBvh.h"
+#include "../cuda_common/gpuBvh.h"
+#include "../cuda_common/gpuScene.h"
 
 __device__ const float EPSILON = 0.00001;
 __device__ const float AIR_REFRACTIVE_INDEX = 1;
@@ -373,20 +374,6 @@ void CudaRenderer::renderFrame(const Camera& camera)
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glFinish();
-}
-
-SceneInfo SceneInfo::fromScene(const Scene& scene)
-{
-	SceneInfo result;
-
-	std::vector<Triangle> cop = scene.triangles;
-	std::unique_ptr<BVHNode> bvh = buildBVH(std::move(cop));
-	result.triangleBvh = makeGpuBvh(bvh.get());
-
-	result.spheres = vectorToGpu(scene.spheres);
-	result.lights = vectorToGpu(scene.lights);
-
-	return result;
 }
 
 void CudaRenderer::initialize()

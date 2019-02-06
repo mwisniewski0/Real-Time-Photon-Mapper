@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../common/bvh.h"
-#include "cudaHelpers.h"
+#include "../cuda_common/cudaHelpers.h"
 
 struct BVHGpuData
 {

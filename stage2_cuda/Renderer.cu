@@ -1,9 +1,9 @@
 ﻿#include "Renderer.h"
 #include "Camera.h"
-#include "Helpers.h"
+#include "../cuda_common/helpers.h"
 #include "../common/geometry.h"
 #include <iostream>
-#include "gpuBvh.h"
+#include "../cuda_common/gpuBvh.h"
 #include "ply.h"
 #include "cudaRenderer.h"
 #include "GlHelp.h"

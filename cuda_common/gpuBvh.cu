@@ -1,4 +1,4 @@
-#include "gpuBvh.h"
+#include "../cuda_common/gpuBvh.h"
 
 
 void BVHGpuData::release()
