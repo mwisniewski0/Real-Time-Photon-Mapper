@@ -18,7 +18,6 @@
 
 #define WIDTH 500
 #define HEIGHT 500
-#define NUM_PHOTONS (1<<20)
 #define MAX_DEPTH 10
 
 enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
@@ -185,13 +184,23 @@ SceneInfo createScene(){
 
 	scene.lights.push_back(PointLightSource{
 		{0, 0.0f, 0},
-		{1000000, 1000000, 1000000},
+		{100000, 100000, 100000},
 		});
 	return SceneInfo::fromScene(scene);
 }
 
+namespace {
+
+	__device__ float3 getNormalAwayFromRay(Ray ray, Triangle t) {
+		// Avoiding branching - this will flip the sign of the normal if the normal forms an obtuse
+		// angle with the direction of the ray
+		return normalize(t.normal*dot(t.normal, -ray.dir));
+	}
+
+}
+
 //trace photons and return array in photonList
-__global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList) {
+__global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList, int numPhotons) {
 	uint idx = blockIdx.x*blockDim.x + threadIdx.x; //gpu thread index
 
 	curandState randState;
@@ -231,12 +240,10 @@ __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList) {
 			}
 
 			if (t < 1e19) {
-				ray.origin += direction*t;
+				ray.origin += ray.dir *t;
 				if ((action == DIFFUSE || action == ABSORBED)) {
 					photonList[MAX_DEPTH*idx + count].pos = ray.origin;
-					photonList[MAX_DEPTH*idx + count].power = color / NUM_PHOTONS;
-					auto p = photonList[MAX_DEPTH*idx + count].power;
-					printf("%f,%f,%f\n", p.x, p.y, p.z);
+					photonList[MAX_DEPTH*idx + count].power = color / numPhotons;
 					++count;
 				}
 			}
@@ -244,27 +251,27 @@ __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList) {
 				break;
 			}
 
-			float3 normal = tri->normal;
-			normal = normalize(normal);
+			float3 normal = getNormalAwayFromRay(ray, *tri);
 
 
 			if (action == DIFFUSE) {
+
 				cosPhi = curand_uniform(&randState);
 				sinPhi = sqrtf(1 - cosPhi*cosPhi);
 				theta = curand_uniform(&randState) * 2 * M_PI;
-
+				
 				float3 w = normal;
 				float3 u = normalize(cross((fabs(w.x) > 0.0001 ?
 					make_float3(0, 1, 0) :
 					make_float3(1, 0, 0)), w));
 				float3 v = cross(w, u);
-				direction = normalize(u*cosf(theta)*sinPhi +
+				ray.dir = normalize(u*cosf(theta)*sinPhi +
 					v*sinf(theta)*sinPhi +
 					w*cosPhi);
 				color *= diffuse;
 			}
 			else if (action == SPECULAR) {
-				ray.dir = direction - 2 * normal*dot(normal, direction);
+				ray.dir = reflect(ray.dir, normal);
 				color *= specular;
 			}
 			else {//absorbed	    
@@ -316,30 +323,21 @@ void writeTestToFile(std::vector<Photon> photons, std::string filename) {
 	file.close();
 }
 
-int main(){
+std::vector<Photon> tracePhotons(const SceneInfo& scene, int numPhotons) {
 
-    std::vector<Photon> photonList_h(NUM_PHOTONS*MAX_DEPTH);
-    Photon* photonList_d;
-    
+    std::vector<Photon> photonList_h(numPhotons*MAX_DEPTH);
+    Photon* photonList_d;    
     checkCudaError(cudaMalloc(&photonList_d, photonList_h.size()*sizeof(Photon)));
 
-    SceneInfo scene = createScene();
-    
-	getPhotonsKernel<<<NUM_PHOTONS/64, 64>>>(scene, photonList_d);
+	getPhotonsKernel<<<numPhotons /64, 64>>>(scene, photonList_d, numPhotons);
 	checkCudaError(cudaGetLastError());
-    cudaDeviceSynchronize();
-    cudaMemcpy(photonList_h.data(), photonList_d,
-	       photonList_h.size()*sizeof(Photon), cudaMemcpyDeviceToHost);
+
+    checkCudaError(cudaDeviceSynchronize());
+	checkCudaError(cudaMemcpy(photonList_h.data(), photonList_d,
+	       photonList_h.size()*sizeof(Photon), cudaMemcpyDeviceToHost));
  
-    cudaFree(photonList_d);
+	checkCudaError(cudaFree(photonList_d));
     
-    writeTestToFile(photonList_h, "test.ppm");
-
-    //sortPhotons(photonList_h);
-
-#ifdef WIN32
-	std::cin.ignore();
-#endif
-        
-    return 0;
+    sortPhotons(photonList_h);
+	return photonList_h;
 }

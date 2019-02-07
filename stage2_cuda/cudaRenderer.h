@@ -13,6 +13,7 @@
 #include "../common/scene.h"
 #include "../cuda_common/gpuBvh.h"
 #include "../cuda_common/gpuScene.h"
+#include "../common/photon.h"
 
 class CudaRenderer
 {
@@ -21,6 +22,7 @@ class CudaRenderer
 	cudaGraphicsResource_t viewCudaResource;
 	int outputWidth;
 	int outputHeight;
+	GPUVector<Photon> photonMap;
 
 	void initialize();
 	

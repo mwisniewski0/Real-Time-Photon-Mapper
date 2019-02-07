@@ -24,11 +24,16 @@ struct GPUVector
 	{
 		cudaFree(contents);
 	}
-	
-    __device__ T& operator[](unsigned idx)
+
+	__host__ __device__ T& operator[](unsigned idx)
 	{
 		return contents[idx];
-    }
+	}
+
+	__host__ __device__ const T& operator[] (unsigned idx) const
+	{
+		return contents[idx];
+	}
 };
 
 template <typename T>

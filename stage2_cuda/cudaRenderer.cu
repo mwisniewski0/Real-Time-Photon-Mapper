@@ -11,6 +11,8 @@
 #include <iostream>
 #include "../cuda_common/gpuBvh.h"
 #include "../cuda_common/gpuScene.h"
+#include "../stage1/photonTracing.h"
+#include "../cuda_common/kd-tree.h"
 
 __device__ const float EPSILON = 0.00001;
 __device__ const float AIR_REFRACTIVE_INDEX = 1;
@@ -82,7 +84,6 @@ __device__ float lengthSquared(float3 v)
 
 __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
-									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
 
 	RayHit tempResult;
 	auto intersectedTriangle = scene.triangleBvh.intersectRay(ray, closestHitDistance);
@@ -111,7 +112,7 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 
 __device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
-									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
+	//printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
 
 	RayHit tempResult;
 	for (int i = 0; i < scene.triangleBvh.triangles.size; ++i)
@@ -145,28 +146,32 @@ __device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  re
 	return closestHitDistance < 1e19;
 }
 
-__device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) {
-	float3 illumination = make_float3(0.2, 0.2, 0.2) * hit.material.color;
-	for (int i = 0; i < scene.lights.size; ++i)
-	{
-		float3 vectorToLight = scene.lights.contents[i].position - hit.pointOfHit;
-
-		RayHit hitTowardsLight;
-		bool lightReached = !castRay(
-			Ray::fromPoints(hit.pointOfHit + (hit.normal * EPSILON), scene.lights.contents[i].position),
-			scene, &hitTowardsLight);
-		lightReached =
-			lightReached || (
-				lengthSquared(hitTowardsLight.pointOfHit - hit.pointOfHit) >
-				lengthSquared(vectorToLight));
-		if (lightReached)
-		{
-			illumination += hit.material.color * scene.lights.contents[i].intensity * dot(normalize(vectorToLight), hit.normal);
-		}
-	}
-
-
-	return illumination;
+__device__ float3 getHitIllumination(const SceneInfo& scene, const GPUVector<Photon>& photonMap, const RayHit& hit) {	
+	float3 illumination = gatherPhotons(hit.pointOfHit, photonMap);
+	//printf("%f %f %f\n", illumination.x, illumination.y, illumination.z);
+	return illumination* hit.material.color;
+	// return gatherPhotons(hit.pointOfHit, photonMap) * hit.material.color;
+	// float3 illumination = make_float3(0.2, 0.2, 0.2) * hit.material.color;
+	// for (int i = 0; i < scene.lights.size; ++i)
+	// {
+	// 	float3 vectorToLight = scene.lights.contents[i].position - hit.pointOfHit;
+	//
+	// 	RayHit hitTowardsLight;
+	// 	bool lightReached = !castRay(
+	// 		Ray::fromPoints(hit.pointOfHit + (hit.normal * EPSILON), scene.lights.contents[i].position),
+	// 		scene, &hitTowardsLight);
+	// 	lightReached =
+	// 		lightReached || (
+	// 			lengthSquared(hitTowardsLight.pointOfHit - hit.pointOfHit) >
+	// 			lengthSquared(vectorToLight));
+	// 	if (lightReached)
+	// 	{
+	// 		illumination += hit.material.color * scene.lights.contents[i].intensity * dot(normalize(vectorToLight), hit.normal);
+	// 	}
+	// }
+	//
+	//
+	// return illumination;
 }
 
 __device__ float3 refract(const float3& in, const float3& normal, float eta)
@@ -207,7 +212,7 @@ __device__ float calculateReflectRatio(float n1, float n2, const float3& normal,
 	return ret;
 }
 
-__device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
+__device__ float3 getRayColor(const SceneInfo& scene, const GPUVector<Photon>& photonMap, Ray ray) {
 	const int MAX_RAY_BOUNCE = 15;
 
 	RaySplit rays[MAX_RAY_BOUNCE];
@@ -241,7 +246,8 @@ __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 		else if (hit.material.type == 2)
 		{
 			// Refractive
-			if (dot(hit.normal, r.dir) < 0) {
+			if (dot(hit.normal, r.dir) < 0)
+			{
 				float reflectRatio = calculateReflectRatio(AIR_REFRACTIVE_INDEX, hit.material.refractiveIndex, hit.normal, r.dir);
 
 				++lastRay;
@@ -256,7 +262,8 @@ __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
 				rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
 			}
-			else {
+			else
+			{
 				float reflectRatio = calculateReflectRatio(hit.material.refractiveIndex, AIR_REFRACTIVE_INDEX, -hit.normal, r.dir);
 
 				++lastRay;
@@ -275,7 +282,7 @@ __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 		else
 		{
 			// Diffuse
-			currentIllumination += split.currentModifier * getHitIllumination(scene, hit);
+			currentIllumination += split.currentModifier * getHitIllumination(scene, photonMap, hit);
 		}
 	}
 
@@ -283,8 +290,8 @@ __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 }
 
 
-__global__ void renderingKernel(CudaCamera cam, SceneInfo scene, unsigned screenWidth,
-	unsigned screenHeight, cudaSurfaceObject_t output)
+__global__ void renderingKernel(CudaCamera cam, GPUVector<Photon> photonMap, SceneInfo scene,
+                                unsigned screenWidth, unsigned screenHeight, cudaSurfaceObject_t output)
 {
 	// Calculate surface coordinates
 	unsigned int xPixel = blockIdx.x * blockDim.x + threadIdx.x;
@@ -296,7 +303,7 @@ __global__ void renderingKernel(CudaCamera cam, SceneInfo scene, unsigned screen
 	Ray ray = getCameraRay(cam, xPixel / (float)screenWidth, yPixel / (float)screenHeight);
 
 	uchar4 color;
-	float3 colorFloat = getRayColor(scene, ray);
+	float3 colorFloat = getRayColor(scene, photonMap, ray);
 
 	colorFloat = minf3(colorFloat, make_float3(1.0));
 
@@ -327,13 +334,14 @@ T* loadVectorToGpu(const std::vector<T> v)
 	T* device_mem;
 	auto err = cudaMalloc((void**)(&device_mem), v.size() * sizeof(T));
 	err = cudaMemcpy((void*)(device_mem), (void*)(&(v[0])),
-		v.size() * sizeof(T), cudaMemcpyHostToDevice);
+	                 v.size() * sizeof(T), cudaMemcpyHostToDevice);
 	return device_mem;
 }
 
 void CudaRenderer::loadScene(const Scene& scene)
 {
 	this->scene = SceneInfo::fromScene(scene);
+	this->photonMap = vectorToGpu(tracePhotons(this->scene, 1 << 20));
 }
 
 void CudaRenderer::renderFrame(const Camera& camera)
@@ -352,7 +360,8 @@ void CudaRenderer::renderFrame(const Camera& camera)
 		{
 			dim3 block(8, 8, 1);
 			dim3 grid(outputWidth / block.x, outputHeight / block.y, 1);
-			renderingKernel << <grid, block >> >(camera.getCudaInfo(), scene, outputWidth, outputHeight, viewCudaSurfaceObject);
+			renderingKernel << <grid, block >> >(camera.getCudaInfo(), photonMap, scene, outputWidth, outputHeight, viewCudaSurfaceObject);
+			checkCudaError(cudaGetLastError());
 		}
 		cudaDestroySurfaceObject(viewCudaSurfaceObject);
 	}
