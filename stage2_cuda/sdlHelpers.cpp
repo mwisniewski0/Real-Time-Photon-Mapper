@@ -1,7 +1,7 @@
 #include "sdlHelpers.h"
-#include <SDL2\SDL.h>
+#include <SDL2/SDL.h>
 #include <map>
-#include "../cuda_common/Helpers.h"
+#include "../cuda_common/helpers.h"
 
 
 Uint32 stateUpdateTimerCallback(Uint32 interval, void *param)
