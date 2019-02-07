@@ -19,18 +19,181 @@
 #define WIDTH 500
 #define HEIGHT 500
 #define NUM_PHOTONS (1<<20)
-#define MAX_DEPTH 10
+#define MAX_DEPTH 1
 
 enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
 
+struct Triangle2
+{
+	float3 a, b, c;
+	Material material;
+
+	Triangle toTriangle()
+	{
+		return Triangle::from3Points(a, b, c, material);
+	}
+};
+
 SceneInfo createScene(){
-    
+    	std::vector<Triangle> triangles;// = loadTriangles("models/bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
+
+	Scene scene;
+
+	Triangle2 t;
+
+	// Back wall
+	t.a = { -1, 1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { -1, -1, 1 };
+	t.material = {
+		{ 1, 1, 1 }, // color
+		{ 0, 0, 0 }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0001 // type
+	};
+	triangles.push_back(t.toTriangle());
+	t.a = { 1, 1, 1 };
+	t.b = { 1, -1, 1 };
+	t.c = { -1, -1, 1 };
+	t.material = {
+		{ 1, 1, 1 }, // color
+		{ 0, 0, 0 }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0001 // type
+	};
+	triangles.push_back(t.toTriangle());
+	/*
+	// Front wall
+	t.a = { -1, 1, -4 };
+	t.b = { 1, 1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
+		{ 0, 1, 0 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+	t.a = { 1, 1, -4 };
+	t.b = { 1, -1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
+		{ 0, 1, 0 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+	// Left wall
+	t.a = { -1, -1, 1 };
+	t.b = { -1, 1, 1 };
+	t.c = { -1, -1, -4 };
+	t.material = {
+		{ 0, 0, 1 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+	t.a = { -1, 1, 1 };
+	t.b = { -1, 1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
+		{ 0, 0, 1 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+	// Right wall
+	t.a = { 1, -1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { 1, -1, -4 };
+	t.material = {
+		{ 1, 1, 0 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+	t.a = { 1, 1, 1 };
+	t.b = { 1, 1, -4 };
+	t.c = { 1, -1, -4 };
+	t.material = {
+		{ 1, 1, 0 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+
+	// Top wall
+	t.a = { -1, 1, 1 };
+	t.b = { 1, 1, 1 };
+	t.c = { -1, 1, -4 };
+	t.material = {
+		{ 0, 1, 1 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+
+	t.a = { 1, 1, 1 };
+	t.b = { 1, 1, -4 };
+	t.c = { -1, 1, -4 };
+	t.material = {
+		{ 0, 1, 1 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+
+	// Bottom wall
+	t.a = { -1, -1, 1 };
+	t.b = { 1, -1, 1 };
+	t.c = { -1, -1, -4 };
+	t.material = {
+		{ 1, 0, 1 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+
+
+	t.a = { 1, -1, 1 };
+	t.b = { 1, -1, -4 };
+	t.c = { -1, -1, -4 };
+	t.material = {
+		{ 1, 0, 1 }, // color
+		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+		2.5,  // refractive index (diamond)
+		0x0000 // type
+	};
+	triangles.push_back(t.toTriangle());
+	*/
+	scene.triangles = std::move(triangles);
+
+	scene.lights.push_back(PointLightSource{
+		{0, 0.8f, 0},
+		{1000000, 1000000, 1000000},
+		});
+	return SceneInfo::fromScene(scene);
 }
 
 //trace photons and return array in photonList
 __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList){
     uint idx = blockIdx.x*blockDim.x + threadIdx.x; //gpu thread index
-
+    
     curandState randState;
     curand_init(idx,0,10,&randState); //the 10 is an offset which seems to fix banding but more investigation is needed
 
@@ -38,6 +201,7 @@ __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList){
     float sinPhi = sqrtf(1-cosPhi*cosPhi);
     float theta = curand_uniform(&randState)*2*M_PI;
 
+    
     float3 origin = scene.lights[0].position;
     float3 direction = make_float3(sinPhi*cosf(theta), sinPhi*sinf(theta), cosPhi);
     Ray ray = {origin, direction};
@@ -49,61 +213,64 @@ __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList){
     for (; depth--; ){
 	float t = 1e20;
 	Triangle* tri = scene.triangleBvh.intersectRay(ray, t);
-
-	Material& mat = tri->material;
-	
-	float3 diffuse = mat.color;
-	float3 specular = mat.specularReflectivity;
-	float d_avg = (diffuse.x + diffuse.y + diffuse.z)/3;
-	float s_avg = (specular.x + specular.y + specular.z)/3;
-	float xi = curand_uniform(&randState);
-	ScatterType action;
-	if(xi < d_avg){
-	    action = DIFFUSE;
-	}
-	else if (xi < d_avg + s_avg){
-	    action = SPECULAR;
-	}
-	else{
-	    action = ABSORBED;
-	}
-
-	if (t < 1e19){
-	    ray.origin+=direction*t;
-	    if ((action == DIFFUSE || action == ABSORBED)){
-		photonList[MAX_DEPTH*idx + count].pos = origin;
-		photonList[MAX_DEPTH*idx + count].power = color*scene.lights[0].intensity/NUM_PHOTONS;
-		++count;
+	if(tri){
+	    Material& mat = tri->material;
+	    float3 diffuse = mat.color;
+	    float3 specular = mat.specularReflectivity;
+	    float d_avg = (diffuse.x + diffuse.y + diffuse.z)/3;
+	    float s_avg = (specular.x + specular.y + specular.z)/3;
+	    float xi = curand_uniform(&randState);
+	    ScatterType action;
+	    if(xi < d_avg){
+		action = DIFFUSE;
 	    }
-	}
-	else{ // hit nothing
-	    break;
-	}
-
-	float3 normal = tri->normal;
-	normal = normalize(normal);
+	    else if (xi < d_avg + s_avg){
+		action = SPECULAR;
+	    }
+	    else{
+		action = ABSORBED;
+	    }
+	    
+	    if (t < 1e19){
+		ray.origin+=direction*t;
+		if ((action == DIFFUSE || action == ABSORBED)){
+		    photonList[MAX_DEPTH*idx + count].pos = origin;
+		    photonList[MAX_DEPTH*idx + count].power = color*scene.lights[0].intensity/NUM_PHOTONS;
+		    ++count;
+		}
+	    }
+	    else{ // hit nothing
+		break;
+	    }
+	    
+	    float3 normal = tri->normal;
+	    normal = normalize(normal);
 	
 
-	if (action == DIFFUSE){
-	    cosPhi = curand_uniform(&randState);
-	    sinPhi = sqrtf(1-cosPhi*cosPhi);
-	    theta = curand_uniform(&randState)*2*M_PI;
+	    if (action == DIFFUSE){
+		cosPhi = curand_uniform(&randState);
+		sinPhi = sqrtf(1-cosPhi*cosPhi);
+		theta = curand_uniform(&randState)*2*M_PI;
 	    
-	    float3 w = normal;
-	    float3 u = normalize(cross((fabs(w.x) > 0.0001 ?
+		float3 w = normal;
+		float3 u = normalize(cross((fabs(w.x) > 0.0001 ?
 					make_float3(0,1,0) :
 					make_float3(1,0,0)), w));
-	    float3 v = cross(w,u);
-	    direction = normalize(u*cosf(theta)*sinPhi +
-				  v*sinf(theta)*sinPhi +
-				  w*cosPhi);
-	    color*=diffuse;
+		float3 v = cross(w,u);
+		direction = normalize(u*cosf(theta)*sinPhi +
+				      v*sinf(theta)*sinPhi +
+				      w*cosPhi);
+		color*=diffuse;
+	    }
+	    else if(action == SPECULAR){
+		ray.dir = direction - 2*normal*dot(normal, direction);
+		color*=specular;
+	    }
+	    else{//absorbed	    
+		break;
+	    }
 	}
-	else if(action == SPECULAR){
-	    ray.dir = direction - 2*normal*dot(normal, direction);
-	    color*=specular;
-	}
-	else{//absorbed	    
+	else{
 	    break;
 	}
     }
@@ -165,7 +332,7 @@ int main(){
     
     writeTestToFile(photonList_h, "test.ppm");
 
-    sortPhotons(photonList_h);
+    //sortPhotons(photonList_h);
         
     return 0;
 }
