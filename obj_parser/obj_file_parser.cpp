@@ -2,42 +2,86 @@
 // Created by Beau Carlborg on 2019-01-30.
 //
 
+#include "obj_file_parser.h"
+
 #include <stdio.h>
 #include <iostream>
 
-#define TINYOBJLOADER_IMPLEMENTATION "fuck youuuu"
-#include "tiny_obj_loader.h"
-
-void copy_shape_vertices(std::vector<float> *output,  std::vector<tinyobj::real_t> *vrt_src, tinyobj::shape_t *shape) {
-    std::vector<tinyobj::index_t> *indices = &(shape->mesh.indices);
-
-    for (unsigned long i = 0; i < indices->size(); ++i) {
-        auto curr_vert_index = (unsigned long) indices->at(i).vertex_index;
-        unsigned long vert_base_index = curr_vert_index * 3;
-
-        for (int j = 0; j < 3; j++) {
-            tinyobj::real_t curr_val = vrt_src->at(vert_base_index + j);
-            output->push_back((float) curr_val);
-        }
-
-        output->push_back(0.0);
 
 
+Triangle create_triangle(tinyobj::index_t v1_index, tinyobj::index_t v2_index, tinyobj::index_t v3_index,
+        int material_index,
+        std::vector<tinyobj::real_t> *vertices,
+        std::vector<tinyobj::material_t> *materials) {
 
-//        printf("\t push vert <%f, %f, %f> --> <%f, %f, %f, %f>\n",
-//                vrt_src->at(vert_base_index + 0), vrt_src->at(vert_base_index + 1), vrt_src->at(vert_base_index + 2),
-//                output->at(output->size() - 4), output->at(output->size() - 3), output->at(output->size() - 2) , output->at(output->size() - 1)
+    printf("----TRIANGLE\n");
+
+    float3 v1 = make_float3(vertices->at((3 * v1_index.vertex_index)),
+                            vertices->at((3 * v1_index.vertex_index) + 1),
+                            vertices->at((3 * v1_index.vertex_index) + 2));
+
+
+    float3 v2 = make_float3(vertices->at((3 * v2_index.vertex_index)),
+                            vertices->at((3 * v2_index.vertex_index) + 1),
+                            vertices->at((3 * v2_index.vertex_index) + 2));
+
+
+    float3 v3 = make_float3(vertices->at((3 * v3_index.vertex_index)),
+                            vertices->at((3 * v3_index.vertex_index) + 1),
+                            vertices->at((3 * v3_index.vertex_index) + 2));
+
+
+
+    // Can add whatever we want to materials here.
+    Material *material = new Material;
+
+    if (material_index != -1) {
+        printf("----MATERIAL FOUND: INDEX %d\n", material_index);
+    }
+
+//    material->specularReflectivity = make_float3(materials->at(material_index).specular[0],
+//                                                 materials->at(material_index).specular[1],
+//                                                 materials->at(material_index).specular[2]);
 //
-//                );
+//    material->refractiveIndex = materials->at(material_index).ior;
 
+
+    return Triangle::from3Points(v1, v2, v3, *material);
+}
+
+
+void add_mesh_triangles(tinyobj::mesh_t *mesh,
+        std::vector<tinyobj::real_t> *vertices,
+        std::vector<tinyobj::material_t> *materials,
+        std::vector<Triangle> *triangles) {
+
+    for (int i = 0, j = 0; i < mesh->indices.size(); i += 3, ++j) {
+        printf("----FACE\n");
+        tinyobj::index_t v1_index = mesh->indices.at(i);
+        tinyobj::index_t v2_index = mesh->indices.at(i);
+        tinyobj::index_t v3_index = mesh->indices.at(i);
+
+        int material_index = mesh->material_ids.at(j);
+
+        Triangle new_triangle = create_triangle(v1_index, v2_index, v3_index, material_index, vertices, materials);
+        triangles->push_back(new_triangle);
     }
 }
 
-void fill_array_of_vertices(std::vector<float> *output,  std::vector<tinyobj::real_t> *vrt_src, std::vector<tinyobj::shape_t> *shapes) {
 
-    for (unsigned long i = 0; i < shapes->size(); ++i) {
-        std::cout << shapes->at(i).name << std::endl;
-        copy_shape_vertices(output, vrt_src, &(shapes->at(i)));
+
+void build_triangles_array(std::vector<tinyobj::shape_t> *shapes,
+        std::vector<tinyobj::real_t> *vertices,
+        std::vector<tinyobj::material_t> *materials,
+        std::vector<Triangle> *triangles) {
+
+
+//  for each shape in the scene
+    for (int i = 0; i < shapes->size(); ++i) {
+        printf("**************SHAPE****************\n");
+        tinyobj::shape_t curr = shapes->at(i);
+        tinyobj::mesh_t mesh = shapes->at(i).mesh;
+        add_mesh_triangles(&(mesh), vertices, materials, triangles);
     }
 }
 
@@ -49,19 +93,47 @@ int main(int argc, char **argv) {
     auto *materials = new std::vector<tinyobj::material_t>;
     std::string *warn;
     std::string *err;
-    const char *filename = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/kitchen.obj";
+    const char *filename = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/vonia/vonia.obj";
+    const char *mtl_basedir = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/vonia/materials/";
 
-    bool my_bool = tinyobj::LoadObj(attrib, shapes, materials, warn, err, filename);
+    bool successful_obj_load = tinyobj::LoadObj(attrib, shapes, materials, warn, err, filename, mtl_basedir);
+    if (!successful_obj_load) {
+        std::cout << "obj file was unsuccessfully read!" << std::endl;
+        return 1;
+    }
+
+    // builds teh triangles
+    std::vector<Triangle> triangles;
+
+    // fills triangles vector
+    build_triangles_array(shapes, &(attrib->vertices), materials, &triangles);
+
+//    buildBVH(std::move(triangles));
+
+//    'std::__1::vector<Triangle, std::__1::allocator<Triangle> >' to 'std::vector<Triangle> &&'
+
+//    buildBVH(std::vector<Triangle>());
 
 
-    auto *flattened_vert = new std::vector<float>;
-
-    fill_array_of_vertices(flattened_vert, &(attrib->vertices), shapes);
-
+    return 0;
 }
 
+//
 
-
+//typedef struct {
+//    std::string name;
+//
+//    real_t ambient[3]; // no
+//    real_t diffuse[3]; // yes
+//    real_t specular[3];  // yes
+//    real_t transmittance[3];  // yes
+//    real_t emission[3];  // everything that has a non-zero value will become a light soure
+//    real_t shininess;  // yes
+//    real_t ior;       // type(ish)
+//    real_t dissolve;  // 1 == opaque; 0 == fully transparent
+//    // illumination model (see http://www.fileformat.info/format/material/)
+//    int illum;
+//}
 
 
 
