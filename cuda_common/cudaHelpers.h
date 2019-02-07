@@ -24,6 +24,10 @@ struct GPUVector
 	{
 		cudaFree(contents);
 	}
+
+    __device__ T& operator[](uint idx){
+	return contents[idx];
+    }
 };
 
 template <typename T>

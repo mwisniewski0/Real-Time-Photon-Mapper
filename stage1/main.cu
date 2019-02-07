@@ -7,8 +7,14 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
-#include "helper_math.h"
+#include "../common/cutil_math.h"
+#include "../common/geometry.h"
 #include "../common/photon.h"
+
+#include "../cuda_common/cudaHelpers.h"
+#include "../cuda_common/gpuBvh.h"
+#include "../cuda_common/gpuScene.h"
+#include "../cuda_common/kd-tree.h"
 
 #define WIDTH 500
 #define HEIGHT 500
@@ -17,66 +23,12 @@
 
 enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
 
-struct PointLight{
-    float3 pos;
-    float3 power;
-};
-
-struct Triangle{
-    float3 v0,v1,v2; //verticies
-    float3 diffuse; //diffuse reflectance
-    float3 specular; //specular reflectance
+SceneInfo createScene(){
     
-    //uses moller trumbore algorithm
-    //returns intersection distance on line or -infinity if line doesn't hit
-    __device__ float intersect(float3& point, float3& direction) const{
-	float3 tvec = point - v0;
-	float3 pvec = cross(direction, v2-v0);
-	float det = dot(v1-v0, pvec);
-        
-	det = __fdividef(1.0, det);
-
-	float u = dot(tvec, pvec)*det;
-	if (u < 0 || u > 1)
-	    return -1e20;
-
-	float3 qvec = cross(tvec, v1-v0);
-
-	float v = dot(direction, qvec) * det;
-
-	if (v < 0 || (u+v) > 1)
-	    return -1e20;
-
-	return dot(v2-v0, qvec) * det;
-    }
-};
-
-
-__constant__ PointLight pointLights[] = {
-    {{0,0.95,0}, {100000,100000,100000}}
-};
-
-//hard coded cornell box
-__constant__ Triangle triangles[] = {
-    //floor
-    {{-1,-1,-1},{1,-1,-1},{-1,-1,1},{0.9,0.9,0.9},{0,0,0}},
-    {{1,-1,-1},{1,-1,1},{-1,-1,1},{0.9,0.9,0.9},{0,0,0}},
-    //back
-    {{-1,-1,-1},{-1,1,-1},{1,1,-1},{0.9,0.9,0.9},{0,0,0}},
-    {{-1,-1,-1},{1,1,-1},{1,-1,-1},{0.9,0.9,0.9},{0,0,0}},
-    //ceiling
-    {{-1,1,1},{1,1,1},{1,1,-1},{0.2,0.2,0.9},{0,0,0}},
-    {{-1,1,1},{1,1,-1},{-1,1,-1},{0.2,0.2,0.9},{0,0,0}},
-    //left
-    {{-1,-1,1},{-1,1,1},{-1,1,-1},{0.0,0.0,0.0},{0.9,0.2,0.2}},
-    {{-1,-1,1},{-1,1,-1},{-1,-1,-1},{0.0,0.0,0.0},{0.9,0.2,0.2}},
-    //right
-    {{1,-1,1},{1,1,-1},{1,1,1},{0.0,0.0,0.0},{0.2,0.9,0.2}},
-    {{1,-1,1},{1,-1,-1},{1,1,-1},{0.0,0.0,0.0},{0.2,0.9,0.2}}
-};
+}
 
 //trace photons and return array in photonList
-__global__ void getPhotonsKernel(Photon* photonList){
+__global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList){
     uint idx = blockIdx.x*blockDim.x + threadIdx.x; //gpu thread index
 
     curandState randState;
@@ -86,8 +38,9 @@ __global__ void getPhotonsKernel(Photon* photonList){
     float sinPhi = sqrtf(1-cosPhi*cosPhi);
     float theta = curand_uniform(&randState)*2*M_PI;
 
-    float3 origin = pointLights[0].pos;
+    float3 origin = scene.lights[0].position;
     float3 direction = make_float3(sinPhi*cosf(theta), sinPhi*sinf(theta), cosPhi);
+    Ray ray = {origin, direction};
     float3 color = make_float3(1,1,1);
     
     uint depth = MAX_DEPTH;
@@ -95,18 +48,12 @@ __global__ void getPhotonsKernel(Photon* photonList){
     int count = 0;
     for (; depth--; ){
 	float t = 1e20;
-	uint triIdx = 0;
-	uint numTriangles = sizeof(triangles) / sizeof(Triangle);
-	for (uint i = numTriangles; i--; ){
-	    float d = triangles[i].intersect(origin, direction);
-	    if (d>0 && d<t){
-		t = d;
-		triIdx = i;
-	    }
-	}
+	Triangle* tri = scene.triangleBvh.intersectRay(ray, t);
 
-	float3 diffuse = triangles[triIdx].diffuse;
-	float3 specular = triangles[triIdx].specular;
+	Material& mat = tri->material;
+	
+	float3 diffuse = mat.color;
+	float3 specular = mat.specularReflectivity;
 	float d_avg = (diffuse.x + diffuse.y + diffuse.z)/3;
 	float s_avg = (specular.x + specular.y + specular.z)/3;
 	float xi = curand_uniform(&randState);
@@ -122,10 +69,10 @@ __global__ void getPhotonsKernel(Photon* photonList){
 	}
 
 	if (t < 1e19){
-	    origin+=direction*t;
+	    ray.origin+=direction*t;
 	    if ((action == DIFFUSE || action == ABSORBED)){
 		photonList[MAX_DEPTH*idx + count].pos = origin;
-		photonList[MAX_DEPTH*idx + count].power = color*pointLights[0].power/NUM_PHOTONS;
+		photonList[MAX_DEPTH*idx + count].power = color*scene.lights[0].intensity/NUM_PHOTONS;
 		++count;
 	    }
 	}
@@ -133,8 +80,7 @@ __global__ void getPhotonsKernel(Photon* photonList){
 	    break;
 	}
 
-	float3 normal = cross(triangles[triIdx].v2 - triangles[triIdx].v0,
-			      triangles[triIdx].v1 - triangles[triIdx].v0);
+	float3 normal = tri->normal;
 	normal = normalize(normal);
 	
 
@@ -154,7 +100,7 @@ __global__ void getPhotonsKernel(Photon* photonList){
 	    color*=diffuse;
 	}
 	else if(action == SPECULAR){
-	    direction = direction - 2*normal*dot(normal, direction);
+	    ray.dir = direction - 2*normal*dot(normal, direction);
 	    color*=specular;
 	}
 	else{//absorbed	    
@@ -206,9 +152,11 @@ int main(){
     std::vector<Photon> photonList_h(NUM_PHOTONS*MAX_DEPTH);
     Photon* photonList_d;
     
-    cudaMalloc(&photonList_d, photonList_h.size()*sizeof(Photon));
+    checkCudaError(cudaMalloc(&photonList_d, photonList_h.size()*sizeof(Photon)));
+
+    SceneInfo scene = createScene();
     
-    getPhotonsKernel<<<NUM_PHOTONS/64, 64>>>(photonList_d);
+    getPhotonsKernel<<<NUM_PHOTONS/64, 64>>>(scene, photonList_d);
     cudaDeviceSynchronize();
     cudaMemcpy(photonList_h.data(), photonList_d,
 	       photonList_h.size()*sizeof(Photon), cudaMemcpyDeviceToHost);
@@ -216,6 +164,8 @@ int main(){
     cudaFree(photonList_d);
     
     writeTestToFile(photonList_h, "test.ppm");
+
+    sortPhotons(photonList_h);
         
     return 0;
 }
