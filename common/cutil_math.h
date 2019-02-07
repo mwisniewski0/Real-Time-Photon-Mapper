@@ -23,6 +23,7 @@
 
 #pragma once
 
+#define M_PI   3.14159265358979323846264338327950288
 
 typedef unsigned int uint;
 typedef unsigned short ushort;
@@ -31,6 +32,11 @@ typedef unsigned short ushort;
 
 #define __device__
 #define __host__
+
+int abs(int x)
+{
+	return x < 0 ? -x : x;
+}
 
 struct float4
 {
@@ -191,6 +197,7 @@ inline float rsqrtf(float x)
 	return 1.0f / sqrtf(x);
 }
 #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // constructors
