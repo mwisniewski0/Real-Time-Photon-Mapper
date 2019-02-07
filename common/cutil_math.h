@@ -27,12 +27,10 @@
 typedef unsigned int uint;
 typedef unsigned short ushort;
 
-#ifndef __CUDACC__
+#ifdef NO_CUDA
+
 #define __device__
 #define __host__
-#endif
-
-#ifdef NO_CUDA
 
 struct float4
 {
