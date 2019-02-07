@@ -6,8 +6,6 @@
 
 std::string readFileToString(const std::string& path);
 
-void registerPeriodicalSDLMessage(int periodMs, int messageCode);
-
 template<typename K, typename V>
 bool mapHasKey(std::map<K, V> m, K key)
 {

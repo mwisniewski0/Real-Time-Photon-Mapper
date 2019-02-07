@@ -7,6 +7,7 @@
 #include "ply.h"
 #include "cudaRenderer.h"
 #include "GlHelp.h"
+#include "sdlHelpers.h"
 
 
 // Photon-defined SDL messages
