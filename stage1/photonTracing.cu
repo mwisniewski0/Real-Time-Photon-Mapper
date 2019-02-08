@@ -18,7 +18,7 @@
 
 #define WIDTH 500
 #define HEIGHT 500
-#define MAX_DEPTH 10
+#define MAX_DEPTH 2
 
 enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
 
@@ -32,6 +32,8 @@ struct Triangle2
 		return Triangle::from3Points(a, b, c, material);
 	}
 };
+
+namespace {
 
 SceneInfo createScene(){
     	std::vector<Triangle> triangles;// = loadTriangles("models/bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 2.5f, 0x0000 });
@@ -188,6 +190,7 @@ SceneInfo createScene(){
 		});
 	return SceneInfo::fromScene(scene);
 }
+}
 
 namespace {
 	__device__ float3 getNormalAwayFromRay(Ray ray, Triangle t) {
@@ -339,8 +342,11 @@ std::vector<Photon> tracePhotons(const SceneInfo& scene, uint numPhotons) {
 	writeTestToFile(photonList_h, std::string("test.ppm"));
 
 	std::vector<Photon> before = photonList_h;
-    sortPhotons(photonList_h);
-
+	std::cout << "Before: " << photonList_h.size();
+	sortPhotons(photonList_h);
+	std::cout << " After: " << photonList_h.size() << std::endl;
+	
+	
 	uint out[30];
 
 	GPUVector<Photon> v;

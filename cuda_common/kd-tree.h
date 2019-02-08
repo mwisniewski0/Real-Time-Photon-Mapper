@@ -49,16 +49,8 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 		closest[i] = 0;
 	}
 
-	int loopIdx = -1;
-
 	while (stackIdx >= 0) {
-		loopIdx += 1;
-
 		uint currIdx = stack[stackIdx].photonIdx;
-		if (currIdx >= photonMap.size)
-		{
-			printf("OOGABOOGA\n");
-		}
 		const float3& currPos = photonMap[currIdx].pos;
 		if (!stack[stackIdx].searchedFirst) {
 			float3 diff = { currPos.x - point.x, currPos.y - point.y, currPos.z - point.z };
@@ -76,10 +68,6 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 		}
 		if (2 * currIdx + 1 >= photonMap.size) { //leaf node
 			--stackIdx; // done with node
-			// printf("%d\n", stackIdx);
-
-			break;
-
 			continue;
 		}
 		else {
@@ -97,7 +85,7 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 				pPlane = point.z;
 				cPlane = currPos.z;
 			}
-			//if (loopIdx == 1) break;
+		        
 			if (pPlane <= cPlane) { // search left then right
 	
 				if (stack[stackIdx].searchedFirst) {
@@ -138,15 +126,18 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 }
 
 __device__ inline float3 gatherPhotons(float3 point, const GPUVector<Photon>& map) {
-	uint nearest[50];
-	nearestNeighbor(map, point, nearest, 50);
+	uint nearest[1];
+	nearestNeighbor(map, point, nearest, 1);
 
 	float3 total = make_float3(0, 0, 0);
-	for (int i = 0; i < 512; ++i) {
+	for (int i = 0; i < 1; ++i){  
+	    float dist = length(point - map[nearest[i]].pos);
+	    //printf("%f %f %f\n", point.x, point.y, point.z);
+	    if(dist < 0.01)
 		total += map[nearest[i]].power;
-		// total += map[i].power;
+	    //total += map[i].power;
 	}
-	float dist = length(point - nearest[49]);
+	float dist = 1;// length(point - nearest[0]);
 	return total / dist / dist + make_float3(0.2f);
 }
 

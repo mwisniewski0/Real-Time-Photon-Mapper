@@ -1,4 +1,4 @@
-#include "Helpers.h"
+#include "helpers.h"
 #include <fstream>
 #include <sstream>
 #include <SDL2/SDL.h>

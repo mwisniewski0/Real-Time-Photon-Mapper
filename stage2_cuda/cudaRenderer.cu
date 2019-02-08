@@ -213,7 +213,7 @@ __device__ float calculateReflectRatio(float n1, float n2, const float3& normal,
 }
 
 __device__ float3 getRayColor(const SceneInfo& scene, const GPUVector<Photon>& photonMap, Ray ray) {
-	const int MAX_RAY_BOUNCE = 15;
+	const int MAX_RAY_BOUNCE = 6;
 
 	RaySplit rays[MAX_RAY_BOUNCE];
 	rays[0] = { ray, 1.0f, 1.0f, 1.0f };
@@ -341,7 +341,7 @@ T* loadVectorToGpu(const std::vector<T> v)
 void CudaRenderer::loadScene(const Scene& scene)
 {
 	this->scene = SceneInfo::fromScene(scene);
-	this->photonMap = vectorToGpu(tracePhotons(this->scene, 1 << 20));
+	this->photonMap = vectorToGpu(tracePhotons(this->scene, 1 << 17));
 }
 
 void CudaRenderer::renderFrame(const Camera& camera)

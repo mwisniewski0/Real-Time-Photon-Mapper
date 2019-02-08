@@ -24,12 +24,12 @@ struct GpuBvhNode {
 
 	__host__ __device__ bool isLeaf() const
 	{
-		return u.leaf.count & (1 << 31);
+	    return u.leaf.count & (uint)(1 << 31);
 	}
 
 	void setAsLeaf()
 	{
-		u.leaf.count |= (1 << 31);
+	    u.leaf.count |= (uint)(1 << 31);
 	}
 
 	void setCount(const unsigned& newCount)
