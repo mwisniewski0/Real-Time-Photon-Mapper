@@ -331,27 +331,22 @@ std::vector<Photon> tracePhotons(const SceneInfo& scene, uint numPhotons) {
     Photon* photonList_d;    
     checkCudaError(cudaMalloc(&photonList_d, photonList_h.size()*sizeof(Photon)));
 
+    std::cout << "Tracing photons . . ." << std::endl;
 	getPhotonsKernel<<<numPhotons/64, 64>>>(scene, photonList_d, numPhotons);
 	checkCudaError(cudaGetLastError());
 
-    checkCudaError(cudaDeviceSynchronize());
+	checkCudaError(cudaDeviceSynchronize());
 	checkCudaError(cudaMemcpy(photonList_h.data(), photonList_d,
 	       photonList_h.size()*sizeof(Photon), cudaMemcpyDeviceToHost));
  
 	checkCudaError(cudaFree(photonList_d));
 	writeTestToFile(photonList_h, std::string("test.ppm"));
 
-	std::vector<Photon> before = photonList_h;
-	std::cout << "Before: " << photonList_h.size();
+	std::cout << "Done tracing photons" << std::endl;
+        
+	std::cout << "Start sorting . . ." << std::endl;
 	sortPhotons(photonList_h);
-	std::cout << " After: " << photonList_h.size() << std::endl;
+	std::cout << "Done sorting" << std::endl;
 	
-	
-	uint out[30];
-
-	GPUVector<Photon> v;
-	v.contents = photonList_h.data();
-	v.size = photonList_h.size();
-	nearestNeighbor(v, make_float3(1, 1, 1), out, 30);
 	return photonList_h;
 }

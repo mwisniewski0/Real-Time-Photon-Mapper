@@ -90,13 +90,14 @@ void treeToArray(Photon* photon, Node& node, uint idx, uint max) {
 //Take a list of photons, turn it into a kd-tree and copy it back to the original vector
 //Note that in order to make it balance, the vector may end up a little longer than it started
 void sortPhotons(std::vector<Photon>& photonList){
+    std::vector<Photon> nonZero;
     for (uint i = 0; i< photonList.size(); ++i){
 	float3 pow = photonList[i].power;
-	if (pow.x+pow.y+pow.z < 0.00001){
-	    photonList.erase(photonList.begin() + i);
-	    --i;
+	if (pow.x+pow.y+pow.z > 0.00001){
+	    nonZero.push_back(photonList[i]);
 	}
     }
+    photonList = std::move(nonZero);
     
     std::vector<Photon> temp(1<<((int)std::ceil(log2(photonList.size()))));
     std::unique_ptr<Node> photonMap = buildTree(photonList.data(), photonList.size(), 0);

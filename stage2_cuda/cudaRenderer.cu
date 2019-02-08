@@ -341,7 +341,10 @@ T* loadVectorToGpu(const std::vector<T> v)
 void CudaRenderer::loadScene(const Scene& scene)
 {
 	this->scene = SceneInfo::fromScene(scene);
-	this->photonMap = vectorToGpu(tracePhotons(this->scene, 1 << 17));
+	std::vector<Photon> map = tracePhotons(this->scene, 1 << 20);
+	std::cout << "Started pushing to gpu . . ." << std::endl;
+	this->photonMap = vectorToGpu(map);
+	std::cout << "Done pushing to gpu" << std::endl;
 }
 
 void CudaRenderer::renderFrame(const Camera& camera)

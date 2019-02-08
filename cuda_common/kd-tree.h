@@ -49,7 +49,11 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 		closest[i] = 0;
 	}
 
+	int loopIdx = 0;
+	
 	while (stackIdx >= 0) {
+	    if(loopIdx > (1<<12)) break;
+	    ++loopIdx;
 		uint currIdx = stack[stackIdx].photonIdx;
 		const float3& currPos = photonMap[currIdx].pos;
 		if (!stack[stackIdx].searchedFirst) {
@@ -68,7 +72,6 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 		}
 		if (2 * currIdx + 1 >= photonMap.size) { //leaf node
 			--stackIdx; // done with node
-			continue;
 		}
 		else {
 			uint plane = GET_PLANE(currIdx);
@@ -125,20 +128,23 @@ __device__ __host__ inline void nearestNeighbor(const GPUVector<Photon>& photonM
 	}
 }
 
-__device__ inline float3 gatherPhotons(float3 point, const GPUVector<Photon>& map) {
-	uint nearest[1];
-	nearestNeighbor(map, point, nearest, 1);
+#define NUM_NEAREST 10
 
-	float3 total = make_float3(0, 0, 0);
-	for (int i = 0; i < 1; ++i){  
-	    float dist = length(point - map[nearest[i]].pos);
+__device__ inline float3 gatherPhotons(float3 point, const GPUVector<Photon>& map) {
+	uint nearest[NUM_NEAREST];
+	nearestNeighbor(map, point, nearest, NUM_NEAREST);
+	float scale = 1;
+
+	float3 total = make_float3(0.0);
+	for (int i = 0; i < NUM_NEAREST; ++i){  
+	    float distSqr = dot(point,map[nearest[i]].pos);
 	    //printf("%f %f %f\n", point.x, point.y, point.z);
-	    if(dist < 0.01)
-		total += map[nearest[i]].power;
+	    total += 10*map[nearest[i]].power/scale/M_PI/exp(distSqr/scale);
 	    //total += map[i].power;
 	}
-	float dist = 1;// length(point - nearest[0]);
-	return total / dist / dist + make_float3(0.2f);
+	//total/=10;
+	float dist =1;//length(point - map[nearest[0]].pos);
+	return total / dist / dist;
 }
 
 

@@ -109,10 +109,10 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, 1 };
 	t.c = { -1, -1, 1 };
 	t.material = {
-		{ 1, 0, 0 }, // color
+		{ 0.9, 0.9, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
-		0x0001 // type
+		0x0000 // type
 	};
 	triangles.push_back(t.toTriangle());
 
@@ -120,10 +120,10 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, 1 };
 	t.c = { -1, -1, 1 };
 	t.material = {
-		{ 1, 0, 0 }, // color
+		{ 0.9, 0.9, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
-		0x0001 // type
+		0x0000 // type
 	};
 	triangles.push_back(t.toTriangle());
 
@@ -132,7 +132,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 0, 1, 0 }, // color
+		{ 0.9, 0.9, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -143,7 +143,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 0, 1, 0 }, // color
+		{ 0.9, 0.9, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -155,7 +155,7 @@ Scene Renderer::loadModel()
 	t.b = { -1, 1, 1 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 0, 0, 1 }, // color
+		{ 0.2, 0.9, 0.2 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -166,7 +166,7 @@ Scene Renderer::loadModel()
 	t.b = { -1, 1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 0, 0, 1 }, // color
+		{ 0.2, 0.9, 0.2 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -178,7 +178,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, 1 };
 	t.c = { 1, -1, -4 };
 	t.material = {
-		{ 1, 1, 0 }, // color
+		{ 0.9, 0.2, 0.2 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -188,7 +188,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, -4 };
 	t.c = { 1, -1, -4 };
 	t.material = {
-		{ 1, 1, 0 }, // color
+		{ 0.9, 0.2, 0.2 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -201,7 +201,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, 1 };
 	t.c = { -1, 1, -4 };
 	t.material = {
-		{ 0, 1, 1 }, // color
+		{ 0.2, 0.2, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -213,7 +213,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, -4 };
 	t.c = { -1, 1, -4 };
 	t.material = {
-		{ 0, 1, 1 }, // color
+		{ 0.2, 0.2, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -226,7 +226,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, 1 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 1, 0, 1 }, // color
+		{ 0.9, 0.9, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -238,7 +238,7 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 1, 0, 1 }, // color
+		{ 0.9, 0.9, 0.9 }, // color
 		{ 0.8f, 0.8f, 0.8f }, // reflectivity
 		2.5,  // refractive index (diamond)
 		0x0000 // type
@@ -323,7 +323,7 @@ Scene Renderer::loadModel()
 //		0x0002 // type
 //	};
 
-	scene.spheres.emplace_back();
+	/*scene.spheres.emplace_back();
 	scene.spheres[scene.spheres.size() - 1] = {
 		{ -0.5f, 0.3f, 0 }, 0.2f,
 		{ { 0,0,0 },
@@ -340,7 +340,7 @@ Scene Renderer::loadModel()
 		{ 0.5f, 0.3f, 0 }, 0.2f,
 		{ { 0,0,0 },
 		{ 0.09f, 0.83f, 0.81f }, 2.5f, 1 },
-	};
+		};*/
 	scene.triangles = std::move(triangles);
 
 	scene.lights.push_back(PointLightSource{
