@@ -32,6 +32,8 @@ Binary_Material construct_binary_material(Material material_in) {
     return bin_material;
 }
 
+
+
 Material deconstruct_binary_material(Binary_Material material_in) {
     Material material;
 
@@ -57,6 +59,7 @@ Material deconstruct_binary_material(Binary_Material material_in) {
     return material;
 
 }
+
 
 
 Binary_Triangle construct_binary_triangle(Triangle triangle_in) {
@@ -94,6 +97,7 @@ Binary_Triangle construct_binary_triangle(Triangle triangle_in) {
 
     return bin_triangle;
 }
+
 
 
 Triangle deconstruct_binary_triangle(Binary_Triangle triangle_in) {
@@ -138,60 +142,63 @@ Triangle deconstruct_binary_triangle(Binary_Triangle triangle_in) {
                              triangle_in.v2vt[2]
     );
 
-
     triangle.material = deconstruct_binary_material(triangle_in.bin_material);
+
 
     return triangle;
 }
 
 
 
-
 void triangle_write(std::vector<Triangle> *triangles) {
     FILE *outfile;
 
-    // open file for writing
-    outfile = fopen ("/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/obj_parser/triangle.dat", "w");
-    if (outfile == NULL)
-    {
+    // hardcoded photon file to write to: TODO: switch to be an argument
+    outfile = fopen ("/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/obj_parser/triangle.photon", "w");
+
+    if (outfile == NULL) {
         fprintf(stderr, "\nError opend file\n");
         exit (1);
     }
+
 
     for (int i = 0; i < triangles->size(); ++i) {
         Binary_Triangle binary_triangle = construct_binary_triangle(triangles->at(i));
         fwrite(&(binary_triangle), sizeof(Binary_Triangle), 1, outfile);
     }
 
-    if(fwrite != 0)
-        printf("contents to file written successfully !\n");
+    if (fwrite != 0)
+        printf("contents written to photon file successfully!\n");
     else
-        printf("error writing file !\n");
+        printf("error writing to photon file!\n");
 
-    // close file
+
     fclose (outfile);
 }
+
+
 
 void triangle_read(std::vector<Triangle> *triangles) {
     FILE *infile;
 
-    Binary_Triangle input;
+    // hardcoded photon file to read from
+    infile = fopen ("/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/obj_parser/triangle.photon", "r");
 
-    // Open person.dat for reading
-    infile = fopen ("/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/obj_parser/triangle.dat", "r");
-    if (infile == NULL)
-    {
-        fprintf(stderr, "\nError opening file\n");
+    if (infile == NULL) {
+        fprintf(stderr, "\nError opening photon file\n");
         exit (1);
     }
 
-    // read file contents till end of file
+
+    // Writing the reading Binary_triangles fron photon file to input
+    // converting input to a triangle and appending to triangles vector
+    Binary_Triangle input;
+
     while(fread(&input, sizeof(Binary_Triangle), 1, infile)) {
         Triangle triangle = deconstruct_binary_triangle(input);
-
         triangles->push_back(triangle);
     }
 
-    // close file
+
     fclose (infile);
 }

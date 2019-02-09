@@ -8,9 +8,9 @@
 #include <iostream>
 
 
-//
+
 void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
-                   tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *texcoords) {
+        tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *texcoords) {
 
     float v0v = texcoords->at((2 * v0_index.texcoord_index));
     float v0t = texcoords->at((2 * v0_index.texcoord_index) + 1);
@@ -55,7 +55,6 @@ void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyob
 
 
 
-
 Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, tinyobj::index_t v2_index,
         int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials) {
 
@@ -79,10 +78,7 @@ Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, t
 
 
 
-
-void add_mesh_triangles(tinyobj::mesh_t *mesh,
-        tinyobj::attrib_t *attrib,
-        std::vector<tinyobj::material_t> *materials,
+void add_mesh_triangles(tinyobj::mesh_t *mesh, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials,
         std::vector<Triangle> *triangles) {
 
 //    for triangle face in shape
@@ -106,7 +102,6 @@ void build_triangles_array(std::vector<tinyobj::shape_t> *shapes,
         std::vector<tinyobj::material_t> *materials,
         std::vector<Triangle> *triangles) {
 
-
 //  for each shape in the scene
     for (int i = 0; i < shapes->size(); ++i) {
         tinyobj::shape_t curr = shapes->at(i);
@@ -115,7 +110,6 @@ void build_triangles_array(std::vector<tinyobj::shape_t> *shapes,
 
     }
 }
-
 
 
 
@@ -194,8 +188,8 @@ int main(int argc, char **argv) {
 
 
 // TODO: add support for materials in some way shape or form
-// TODO: create some basic writing to a file just to learn how it works
-
-
+// TODO: destroy the monolith file
+// TODO: change hardcoded file names into arguments
+// TODO: create test file for the whole disgusting mess
     return 0;
 }
