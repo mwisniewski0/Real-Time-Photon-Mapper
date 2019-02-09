@@ -5,10 +5,13 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION ""
 #include "tiny_obj_loader.h"
+#include "./photon_builder.h"
 //
 //#include "beau_geometry.h"
 
 #include "../common/geometry.h"
+#include "../common/bvh.h"
+
 
 
 
