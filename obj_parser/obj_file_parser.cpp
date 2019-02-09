@@ -7,55 +7,74 @@
 #include <stdio.h>
 #include <iostream>
 
-void copy_textures(Triangle *new_triangle, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
+
+//
+void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
                    tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *texcoords) {
 
-    new_triangle->v0vt[0] = texcoords->at((2 * v0_index.texcoord_index));
-    new_triangle->v0vt[1] = texcoords->at((2 * v0_index.texcoord_index) + 1);
+    float v0v = texcoords->at((2 * v0_index.texcoord_index));
+    float v0t = texcoords->at((2 * v0_index.texcoord_index) + 1);
 
-    new_triangle->v1vt[0] = texcoords->at((2 * v1_index.texcoord_index));
-    new_triangle->v1[1] = texcoords->at((2 * v1_index.texcoord_index) + 1);
+    vertex_texcoords[0] = make_float3(v0v, v0t, 0.0);
 
-    new_triangle->v2vt[0] = texcoords->at((2 * v2_index.texcoord_index));
-    new_triangle->v2vt[1] = texcoords->at((2 * v2_index.texcoord_index) + 1);
+    float v1v = texcoords->at((2 * v1_index.texcoord_index));
+    float v1t = texcoords->at((2 * v1_index.texcoord_index) + 1);
 
+    vertex_texcoords[1] = make_float3(v1v, v1t, 0.0);
+
+    float v2v = texcoords->at((2 * v2_index.texcoord_index));
+    float v2t = texcoords->at((2 * v2_index.texcoord_index) + 1);
+
+    vertex_texcoords[2] = make_float3(v2v, v2t, 0.0);
 }
 
 
 
-void copy_vertices(Triangle *new_triangle, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
+ void build_vertices(float3 *triangle_vertices, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
         tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *vertices) {
 
-    new_triangle->v0[0] = vertices->at((3 * v0_index.vertex_index));
-    new_triangle->v0[1] = vertices->at((3 * v0_index.vertex_index) + 1);
-    new_triangle->v0[2] = vertices->at((3 * v0_index.vertex_index) + 2);
+    float v0x = vertices->at((3 * v0_index.vertex_index));
+    float v0y = vertices->at((3 * v0_index.vertex_index) + 1);
+    float v0z = vertices->at((3 * v0_index.vertex_index) + 2);
 
-    new_triangle->v1[0] = vertices->at((3 * v1_index.vertex_index));
-    new_triangle->v1[1] = vertices->at((3 * v1_index.vertex_index) + 1);
-    new_triangle->v1[2] = vertices->at((3 * v1_index.vertex_index) + 2);
+     triangle_vertices[0] = make_float3(v0x, v0y, v0z);
 
-    new_triangle->v2[0] = vertices->at((3 * v2_index.vertex_index));
-    new_triangle->v2[1] = vertices->at((3 * v2_index.vertex_index) + 1);
-    new_triangle->v2[2] = vertices->at((3 * v2_index.vertex_index) + 2);
+    float v1x = vertices->at((3 * v1_index.vertex_index));
+    float v1y = vertices->at((3 * v1_index.vertex_index) + 1);
+    float v1z = vertices->at((3 * v1_index.vertex_index) + 2);
+
+     triangle_vertices[1] = make_float3(v1x, v1y, v1z);
+
+    float v2x = vertices->at((3 * v2_index.vertex_index));
+    float v2y = vertices->at((3 * v2_index.vertex_index) + 1);
+    float v2z = vertices->at((3 * v2_index.vertex_index) + 2);
+
+     triangle_vertices[2] = make_float3(v2x, v2y, v2z);
+
 }
 
 
 
 
 Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, tinyobj::index_t v2_index,
-        int material_index,
-        tinyobj::attrib_t *attrib,
-        std::vector<tinyobj::material_t> *materials) {
+        int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials) {
 
-    Triangle *new_triangle = new Triangle;
 
-    // retrieving vertex locations: filling triangle.v0, triangle.v1, triangle.v2
-    copy_vertices(new_triangle, v0_index, v1_index, v2_index, &(attrib->vertices));
+    float3 triangle_verts[3];
+    build_vertices(triangle_verts, v0_index, v1_index, v2_index, &(attrib->vertices));
 
-    // retrieving texture vt coordinates: filling triangle.v0vt, triangle.v1vt, triangle.v2vt
-    copy_textures(new_triangle, v0_index, v1_index, v2_index, &(attrib->texcoords));
+    Material new_mat;
 
-    return *new_triangle;
+    Triangle new_triangle = Triangle::from3Points(triangle_verts[0], triangle_verts[1], triangle_verts[2], new_mat);
+
+    float3 triangle_vert_texcoords[3];
+    build_texcoords(triangle_vert_texcoords, v0_index, v1_index, v2_index, &(attrib->vertices));
+
+    new_triangle.v0vt = triangle_vert_texcoords[0];
+    new_triangle.v1vt = triangle_vert_texcoords[1];
+    new_triangle.v2vt = triangle_vert_texcoords[2];
+
+    return new_triangle;
 }
 
 
@@ -122,9 +141,23 @@ int main(int argc, char **argv) {
     std::vector<Triangle> triangles;
     build_triangles_array(shapes, attrib, materials, &triangles);
 
+    unsigned long num_faces = 0;
+    for (int i = 0; i < shapes->size(); ++i) {
+        num_faces += shapes->at(i).mesh.indices.size() / 3;
+
+    }
+    printf("number of triangles from tiny: %lu\n", num_faces);
+    printf("Size of the triangles array: %lu\n", triangles.size());
+
+
 
 //    buildBVH(std::move(triangles));
 //    buildBVH(std::vector<Triangle>());
+
+
+// TODO: add support for materials in some way shape or form
+// TODO: create some basic writing to a file just to learn how it works
+
 
     return 0;
 }

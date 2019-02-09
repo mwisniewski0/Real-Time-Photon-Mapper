@@ -52,10 +52,11 @@ struct BoundingBox
 };
 
 struct Material {
-	float3 color;
-	float3 specularReflectivity;
-	float refractiveIndex;
-	int type; // 0 diffuse, 1 specular, 2 refractive
+    float3 diffuse;
+    float3 specular;
+    float3 transmittance;
+    float shininess;
+    int type;
 };
 
 class Shape
@@ -101,11 +102,15 @@ struct Sphere {
 // currently has sepparate scatter and texture info for each triangle
 // scatter and texture type and texture num should eventually be moved to mesh
 struct Triangle : public Shape {
-	float3 p;
-	float3 v0;
-	float3 v1;
+	float3 p;  // v0
+	float3 v0;   // v0->v1
+	float3 v1;   // v0->v2
 	float3 normal; //precompute and store. may not be faster needs testing
 	Material material;
+
+	float3 v0vt;
+    float3 v1vt;
+    float3 v2vt;
 
 	// Moller-Trumbore algorithm for triangle-ray intersection. Returns < 0 if no intersection
 	// occurred. If intersection occured the result will be the distance of the intersection point

@@ -35,10 +35,7 @@ typedef unsigned short ushort;
 #define __device__
 #define __host__
 
-int abs(int x)
-{
-	return x < 0 ? -x : x;
-}
+#include <cstdlib>
 
 struct float4
 {

@@ -5,8 +5,10 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION ""
 #include "tiny_obj_loader.h"
+//
+//#include "beau_geometry.h"
 
-#include "beau_geometry.h"
+#include "../common/geometry.h"
 
 
 
@@ -17,29 +19,27 @@
 //
 
 
-void copy_textures(Triangle *new_triangle,
-                   tinyobj::index_t v0_index,
-                   tinyobj::index_t v1_index,
-                   tinyobj::index_t v2_index,
-                   std::vector<tinyobj::real_t> *texcoords
-                   );
+float3 *build_texcoords(tinyobj::index_t v0_index,
+                       tinyobj::index_t v1_index,
+                       tinyobj::index_t v2_index,
+                       std::vector<tinyobj::real_t> *texcoords
+);
 
 
-
-void copy_vertices(Triangle *new_triangle,
-                   tinyobj::index_t v0_index,
-                   tinyobj::index_t v1_index,
-                   tinyobj::index_t v2_index,
-                   std::vector<tinyobj::real_t> *vertices
-                   );
+float3 *build_vertices(tinyobj::index_t v0_index,
+                       tinyobj::index_t v1_index,
+                       tinyobj::index_t v2_index,
+                       std::vector<tinyobj::real_t> *vertices
+);
 
 
-Triangle create_triangle(tinyobj::index_t face_base_index,
-                         int material_index,
-                         std::vector<tinyobj::index_t> face_vertex_indices,
-                         tinyobj::attrib_t *attrib,
-                         std::vector<tinyobj::material_t> *materials
-                         );
+Triangle create_and_push_triangle(tinyobj::index_t v0_index,
+                                  tinyobj::index_t v1_index,
+                                  tinyobj::index_t v2_index,
+                                  int material_index,
+                                  tinyobj::attrib_t *attrib,
+                                  std::vector<tinyobj::material_t> *materials
+);
 
 
 
@@ -48,11 +48,12 @@ void add_mesh_triangles(tinyobj::mesh_t *mesh,
                         tinyobj::attrib_t *attrib,
                         std::vector<tinyobj::material_t> *materials,
                         std::vector<Triangle> *triangles
-                        );
+);
 
 
 
 void build_triangles_array(std::vector<tinyobj::shape_t> *shapes,
                            tinyobj::attrib_t *attrib,
                            std::vector<tinyobj::material_t> *materials,
-                           std::vector<Triangle> *triangles);
+                           std::vector<Triangle> *triangles
+);
