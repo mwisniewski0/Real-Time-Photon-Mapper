@@ -60,3 +60,7 @@ cmake-build-debug/
 
 #ignoring this random drectory that beaus computer
 .idea/
+
+
+# ingnoring test files that might appear while beau makes the .photon file
+obj_parser/*.dat

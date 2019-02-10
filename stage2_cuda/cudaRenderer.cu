@@ -122,7 +122,7 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 
 __device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
-									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
+									  // printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
 
 	RayHit tempResult;
 	for (int i = 0; i < scene.triangleBvh.triangles.size; ++i)
