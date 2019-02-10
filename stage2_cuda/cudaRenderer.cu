@@ -35,6 +35,7 @@ struct RayHit {
 	float3 pointOfHit;
 	float3 normal;  // Unit vector
 	Material material;
+	float3 color;
 };
 
 __device__ bool intersectRayAndSphere(const Ray& ray, const Sphere& s, RayHit* hit)
@@ -91,6 +92,16 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 		result->pointOfHit = ray.pointAtDistance(closestHitDistance);
 		result->normal = getNormalAwayFromRay(ray, *intersectedTriangle);
 		result->material = intersectedTriangle->material;
+		result->color = result->material.color;
+
+		if (intersectedTriangle->material.type == 3)
+		{
+			auto bary = absoluteToBarycentric(*intersectedTriangle, result->pointOfHit);
+			float3 texel = applyBarycentric(bary, intersectedTriangle->v0vt,
+				intersectedTriangle->v1vt, intersectedTriangle->v2vt);
+			// printf("%f %f %f | %f %f %f\n", bary.x, bary.y, bary.z);
+			result->color = result->material.texture.getTexelColor(texel.x, texel.y);
+		}
 	}
 
 	for (int i = 0; i < scene.spheres.size; ++i)
@@ -146,7 +157,7 @@ __device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  re
 }
 
 __device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) {
-	float3 illumination = make_float3(0.2, 0.2, 0.2) * hit.material.color;
+	float3 illumination = make_float3(0.2, 0.2, 0.2);
 	for (int i = 0; i < scene.lights.size; ++i)
 	{
 		float3 vectorToLight = scene.lights.contents[i].position - hit.pointOfHit;
@@ -161,7 +172,7 @@ __device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) 
 				lengthSquared(vectorToLight));
 		if (lightReached)
 		{
-			illumination += hit.material.color * scene.lights.contents[i].intensity * dot(normalize(vectorToLight), hit.normal);
+			illumination += scene.lights.contents[i].intensity * dot(normalize(vectorToLight), hit.normal);
 		}
 	}
 
@@ -275,7 +286,7 @@ __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 		else
 		{
 			// Diffuse
-			currentIllumination += split.currentModifier * getHitIllumination(scene, hit);
+			currentIllumination += split.currentModifier * getHitIllumination(scene, hit) * hit.color;
 		}
 	}
 

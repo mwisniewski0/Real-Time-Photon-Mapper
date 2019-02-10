@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include "../common/cutil_math.h"
+#include "../stage2_cuda/gpuTextures.h"
 
 struct Ray {
 	float3 origin;
@@ -55,7 +56,8 @@ struct Material {
 	float3 color;
 	float3 specularReflectivity;
 	float refractiveIndex;
-	int type; // 0 diffuse, 1 specular, 2 refractive
+	int type; // 0 diffuse, 1 specular, 2 refractive, 3 diffuse-texture
+	GPUTexture texture;
 };
 
 class Shape
@@ -105,7 +107,13 @@ struct Triangle : public Shape {
 	float3 v0;
 	float3 v1;
 	float3 normal; //precompute and store. may not be faster needs testing
+
 	Material material;
+
+	// Z-part of these will be ignored
+	float3 v0vt;
+	float3 v1vt;
+	float3 v2vt;
 
 	// Moller-Trumbore algorithm for triangle-ray intersection. Returns < 0 if no intersection
 	// occurred. If intersection occured the result will be the distance of the intersection point
@@ -145,3 +153,37 @@ struct PointLightSource {
 	float3 position;
 	float3 intensity;
 };
+
+inline float triangleArea(const float3& v0, const float3& v1, const float3& v2)
+{
+	return length(cross((v1 - v0), (v2 - v0))) * 0.5;
+}
+
+inline __device__ __host__ float3 absoluteToBarycentric(const Triangle& t, const float3& p)
+{
+	float3 result;
+
+	const float3& a = t.p;
+	float3 b = t.v0 + a;
+	float3 c = t.v1 + a;
+
+	float abcArea = triangleArea(a, b, c);
+	float capArea = triangleArea(c, a, p);
+	float bcpArea = triangleArea(b, c, p);
+
+	// contribution of v0
+	result.x = bcpArea / abcArea;
+
+	// contribution of v1
+	result.y = capArea / abcArea;
+
+	// contribution of v2
+	result.z = 1 - result.x - result.y;
+
+	return result;
+}
+
+inline __device__ __host__ float3 applyBarycentric(const float3& bary, const float3& a, const float3& b, const float3& c)
+{
+	return bary.x * a + bary.y * b + bary.z * c;
+}
