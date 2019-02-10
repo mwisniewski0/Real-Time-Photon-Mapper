@@ -65,17 +65,17 @@ Material deconstruct_binary_material(Binary_Material material_in) {
 Binary_Triangle construct_binary_triangle(Triangle triangle_in) {
     Binary_Triangle bin_triangle;
 
-    bin_triangle.p[0] = triangle_in.p.x;
-    bin_triangle.p[1] = triangle_in.p.y;
-    bin_triangle.p[2] = triangle_in.p.z;
+    bin_triangle.p[0] = triangle_in.v0.x;
+    bin_triangle.p[1] = triangle_in.v0.y;
+    bin_triangle.p[2] = triangle_in.v0.z;
 
-    bin_triangle.v0[0] = triangle_in.v0.x;
-    bin_triangle.v0[1] = triangle_in.v0.y;
-    bin_triangle.v0[2] = triangle_in.v0.z;
+    bin_triangle.v0[0] = triangle_in.v0v1.x;
+    bin_triangle.v0[1] = triangle_in.v0v1.y;
+    bin_triangle.v0[2] = triangle_in.v0v1.z;
 
-    bin_triangle.v1[0] = triangle_in.v1.x;
-    bin_triangle.v1[1] = triangle_in.v1.y;
-    bin_triangle.v1[2] = triangle_in.v1.z;
+    bin_triangle.v1[0] = triangle_in.v0v2.x;
+    bin_triangle.v1[1] = triangle_in.v0v2.y;
+    bin_triangle.v1[2] = triangle_in.v0v2.z;
 
     bin_triangle.normal[0] = triangle_in.normal.x;
     bin_triangle.normal[1] = triangle_in.normal.y;
@@ -103,18 +103,18 @@ Binary_Triangle construct_binary_triangle(Triangle triangle_in) {
 Triangle deconstruct_binary_triangle(Binary_Triangle triangle_in) {
     Triangle triangle;
 
-    triangle.p = make_float3(triangle_in.p[0],
+    triangle.v0 = make_float3(triangle_in.p[0],
                              triangle_in.p[1],
                              triangle_in.p[2]
     );
 
 
-    triangle.v0 = make_float3(triangle_in.v0[0],
+    triangle.v0v1 = make_float3(triangle_in.v0[0],
                              triangle_in.v0[1],
                              triangle_in.v0[2]
     );
 
-    triangle.v1 = make_float3(triangle_in.v1[0],
+    triangle.v0v2 = make_float3(triangle_in.v1[0],
                              triangle_in.v1[1],
                              triangle_in.v1[2]
     );

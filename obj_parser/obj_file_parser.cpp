@@ -153,21 +153,21 @@ int main(int argc, char **argv) {
     triangle_read(&new_triangles);
 
     for (int i = 0; i < triangles.size(); ++i) {
-        bool v0x = triangles.at(i).p.x == new_triangles.at(i).p.x;
-        bool v0y = triangles.at(i).p.y == new_triangles.at(i).p.y;
-        bool v0z = triangles.at(i).p.z == new_triangles.at(i).p.z;
+        bool v0x = triangles.at(i).v0.x == new_triangles.at(i).v0.x;
+        bool v0y = triangles.at(i).v0.y == new_triangles.at(i).v0.y;
+        bool v0z = triangles.at(i).v0.z == new_triangles.at(i).v0.z;
 
         bool v0 = v0x && v0y && v0z;
 
-        bool v1x = triangles.at(i).v0.x == new_triangles.at(i).v0.x;
-        bool v1y = triangles.at(i).v0.y == new_triangles.at(i).v0.y;
-        bool v1z = triangles.at(i).v0.z == new_triangles.at(i).v0.z;
+        bool v1x = triangles.at(i).v0v1.x == new_triangles.at(i).v0v1.x;
+        bool v1y = triangles.at(i).v0v1.y == new_triangles.at(i).v0v1.y;
+        bool v1z = triangles.at(i).v0v1.z == new_triangles.at(i).v0v1.z;
 
         bool v1 = v1x && v1y && v1z;
 
-        bool v2x = triangles.at(i).v1.x == new_triangles.at(i).v1.x;
-        bool v2y = triangles.at(i).v1.y == new_triangles.at(i).v1.y;
-        bool v2z = triangles.at(i).v1.z == new_triangles.at(i).v1.z;
+        bool v2x = triangles.at(i).v0v2.x == new_triangles.at(i).v0v2.x;
+        bool v2y = triangles.at(i).v0v2.y == new_triangles.at(i).v0v2.y;
+        bool v2z = triangles.at(i).v0v2.z == new_triangles.at(i).v0v2.z;
 
         bool v2 = v2x && v2y && v1z;
         
