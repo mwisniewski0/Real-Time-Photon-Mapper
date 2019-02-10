@@ -4,7 +4,12 @@
 #include <vector>
 #include <chrono>
 #include "../common/cutil_math.h"
-#include "../stage2_cuda/gpuTextures.h"
+
+#ifdef NO_CUDA
+#include "gpuTexturesNoCuda.h"
+#else
+#include "../cuda_common/gpuTextures.h"
+#endif
 
 struct Ray {
 	float3 origin;
