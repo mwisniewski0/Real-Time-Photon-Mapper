@@ -27,7 +27,7 @@ Binary_Material construct_binary_material(Material material_in) {
 
     bin_material.shininess = material_in.shininess;
 
-    bin_material.type = material_in.type;
+//    bin_material.type = material_in.type;
 
     return bin_material;
 }
@@ -54,7 +54,7 @@ Material deconstruct_binary_material(Binary_Material material_in) {
 
     material.shininess = material_in.shininess;
 
-    material.type = material.type;
+//    material.type = material.type;
 
     return material;
 

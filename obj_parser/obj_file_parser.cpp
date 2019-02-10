@@ -4,6 +4,8 @@
 
 #include "obj_file_parser.h"
 
+#include "../common/ply.h"
+
 #include <stdio.h>
 #include <iostream>
 
@@ -113,6 +115,8 @@ void build_triangles_array(std::vector<tinyobj::shape_t> *shapes,
 
 
 
+
+
 int main(int argc, char **argv) {
 
 //    Values that will be filled by call to tinyobj::LoadObj
@@ -152,39 +156,42 @@ int main(int argc, char **argv) {
 
     triangle_read(&new_triangles);
 
-    for (int i = 0; i < triangles.size(); ++i) {
-        bool v0x = triangles.at(i).v0.x == new_triangles.at(i).v0.x;
-        bool v0y = triangles.at(i).v0.y == new_triangles.at(i).v0.y;
-        bool v0z = triangles.at(i).v0.z == new_triangles.at(i).v0.z;
+//    for (int i = 0; i < triangles.size(); ++i) {
+//        bool v0x = triangles.at(i).v0.x == new_triangles.at(i).v0.x;
+//        bool v0y = triangles.at(i).v0.y == new_triangles.at(i).v0.y;
+//        bool v0z = triangles.at(i).v0.z == new_triangles.at(i).v0.z;
+//
+//        bool v0 = v0x && v0y && v0z;
+//
+//        bool v1x = triangles.at(i).v0v1.x == new_triangles.at(i).v0v1.x;
+//        bool v1y = triangles.at(i).v0v1.y == new_triangles.at(i).v0v1.y;
+//        bool v1z = triangles.at(i).v0v1.z == new_triangles.at(i).v0v1.z;
+//
+//        bool v1 = v1x && v1y && v1z;
+//
+//        bool v2x = triangles.at(i).v0v2.x == new_triangles.at(i).v0v2.x;
+//        bool v2y = triangles.at(i).v0v2.y == new_triangles.at(i).v0v2.y;
+//        bool v2z = triangles.at(i).v0v2.z == new_triangles.at(i).v0v2.z;
+//
+//        bool v2 = v2x && v2y && v1z;
+//
+//        bool verts_eq = v0 && v1 && v2;
+//
+//        if (verts_eq) {
+//            printf("Triangles at %d are equal\n", i);
+//        }
+//        else {
+//            printf("Triangles at %d are NOT equal\n", i);
+//            return 0;
+//        }
+//
+//    }
 
-        bool v0 = v0x && v0y && v0z;
-
-        bool v1x = triangles.at(i).v0v1.x == new_triangles.at(i).v0v1.x;
-        bool v1y = triangles.at(i).v0v1.y == new_triangles.at(i).v0v1.y;
-        bool v1z = triangles.at(i).v0v1.z == new_triangles.at(i).v0v1.z;
-
-        bool v1 = v1x && v1y && v1z;
-
-        bool v2x = triangles.at(i).v0v2.x == new_triangles.at(i).v0v2.x;
-        bool v2y = triangles.at(i).v0v2.y == new_triangles.at(i).v0v2.y;
-        bool v2z = triangles.at(i).v0v2.z == new_triangles.at(i).v0v2.z;
-
-        bool v2 = v2x && v2y && v1z;
-        
-        bool verts_eq = v0 && v1 && v2;
-        
-        if (verts_eq) {
-            printf("Triangles at %d are equal\n", i);
-        }
-        else {
-            printf("Triangles at %d are NOT equal\n", i);
-            return 0;
-        }
-        
-    }
-
-
-//    buildBVH(std::move(triangles));
+    auto ts = loadTriangles("/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/bun_zipper.ply", {});
+    triCount = ts.size();
+    printf("above build bvh\n");
+    buildBVH(std::move(ts));
+    printf("below build bvh\n");
 
 
 // TODO: add support for materials in some way shape or form

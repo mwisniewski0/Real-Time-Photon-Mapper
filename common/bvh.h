@@ -4,6 +4,11 @@
 #include <vector>
 #include "geometry.h"
 #include <memory>
+#include <istream>
+#include <ostream>
+#include "streamWriter.h"
+
+extern int triCount;
 
 // Representation of BVH nodes for GPUs. This is exactly 32 bytes which is the size of an L2 cache
 // line.
@@ -73,3 +78,16 @@ struct BVHLeaf: BVHNode{
 };
 
 std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles);
+
+template<>
+void writeToStream<GpuBvhNode>(std::ostream& s, const GpuBvhNode& v);
+
+template<>
+GpuBvhNode readFromStream<GpuBvhNode>(std::istream& s);
+
+template<>
+void writeToStream<BVHGpuDataRaw>(std::ostream& s, const BVHGpuDataRaw& v);
+
+template<>
+BVHGpuDataRaw readFromStream<BVHGpuDataRaw>(std::istream& s);
+

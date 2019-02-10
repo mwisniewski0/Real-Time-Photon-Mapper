@@ -1,35 +1,41 @@
 #pragma once
 #include <istream>
 #include <ostream>
-#include "../common/cutil_math.h"
+#include "cutil_math.h"
 
 
 template <typename T>
 T readFromStream(std::istream& s)
 {
-	T v;
-	s.read((char*)&v, sizeof(v));
-	return v;
+    T v;
+    s.read((char*)&v, sizeof(v));
+    return v;
 }
+
 
 template <typename T>
 void writeToStream(std::ostream& s, const T& v)
 {
-	s.write((char*)&v, sizeof(T));
+    s.write((char*)&v, sizeof(T));
 }
 
-template <>
-float3 readFromStream(std::istream& s) {
-	float3 result;
-	result.x = readFromStream<float>(s);
-	result.y = readFromStream<float>(s);
-	result.z = readFromStream<float>(s);
-	return result;
+template <typename T>
+std::vector<T> readVectorFromStream(std::istream& s)
+{
+    std::vector<T> result;
+    unsigned size = readFromStream<unsigned>(s);
+
+    result.reserve(size);
+    for (unsigned i = 0; i < size; ++i) {
+        result.push_back(readFromStream<T>(s));
+    }
 }
 
-template<>
-void writeToStream(std::ostream& s, const float3& v) {
-	writeToStream(s, v.x);
-	writeToStream(s, v.y);
-	writeToStream(s, v.z);
+template <typename T>
+void writeVectorToStream(std::ostream& s, const std::vector<T>& v)
+{
+    writeToStream<unsigned>(s, v.size());
+    for (const auto& el : v) {
+        writeToStream(s, el);
+    }
 }

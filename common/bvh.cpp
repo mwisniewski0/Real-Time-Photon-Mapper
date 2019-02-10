@@ -3,6 +3,9 @@
 
 const float inf = std::numeric_limits<float>().infinity();
 
+int triCount = 0;
+int doneCount = 0;
+
 enum Axis
 {
 	AxisX, AxisY, AxisZ
@@ -64,6 +67,8 @@ struct BBoxTemp {
 
 std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	if (working.size() < 4) { // if only 4 triangles left
+		doneCount += working.size();
+		printf("%d\\%d\n", doneCount, triCount);
 		auto leaf = std::make_unique<BVHLeaf>();
 		for (int i = 0; i< working.size(); ++i)
 			leaf->triangles.push_back(working[i].triangle);
@@ -170,6 +175,8 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	}
 	// if no split is better, just add a leaf node
 	if (best_axis == -1) {
+		doneCount += working.size();
+		printf("%d\\%d\n", doneCount, triCount);
 		auto leaf = std::make_unique<BVHLeaf>();
 		for (int i = 0; i< working.size(); ++i)
 			leaf->triangles.push_back(working[i].triangle);
@@ -248,6 +255,37 @@ std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles)
 	root->boundingBox.minCoords = min;
 	root->boundingBox.maxCoords = max;
 	return root;
+}
+
+template<>
+void writeToStream<GpuBvhNode>(std::ostream &s, const GpuBvhNode &v) {
+	writeToStream(s, v.max);
+	writeToStream(s, v.min);
+	writeToStream(s, v.u.inner.left);
+	writeToStream(s, v.u.inner.right);
+}
+
+template<>
+void writeToStream<BVHGpuDataRaw>(std::ostream &s, const BVHGpuDataRaw &v) {
+	writeVectorToStream(s, v.bvhNodes);
+	writeVectorToStream(s, v.triangles);
+}
+
+template<>
+BVHGpuDataRaw readFromStream<BVHGpuDataRaw>(std::istream &s) {
+	BVHGpuDataRaw result;
+	result.bvhNodes = readVectorFromStream<GpuBvhNode>(s);
+	result.triangles = readVectorFromStream<Triangle>(s);
+}
+
+template<>
+GpuBvhNode readFromStream<GpuBvhNode>(std::istream &s) {
+	GpuBvhNode v;
+	v.max = readFromStream<float3>(s);
+	v.min = readFromStream<float3>(s);
+	v.u.inner.left = readFromStream<unsigned>(s);
+	v.u.inner.right = readFromStream<unsigned>(s);
+	return v;
 }
 
 void GpuBvhNode::setBoundingBox(BoundingBox box)

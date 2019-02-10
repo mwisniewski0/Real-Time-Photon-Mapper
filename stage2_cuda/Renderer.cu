@@ -4,7 +4,7 @@
 #include "../common/geometry.h"
 #include <iostream>
 #include "../cuda_common/gpuBvh.h"
-#include "ply.h"
+#include "../common/ply.h"
 #include "cudaRenderer.h"
 #include "GlHelp.h"
 #include "sdlHelpers.h"

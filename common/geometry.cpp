@@ -58,3 +58,29 @@ float3 Triangle::center() const
 {
 	return (3 * v0 + v0v1 + v0v2) / 3.f;
 }
+
+template<>
+Triangle readFromStream<Triangle>(std::istream &s) {
+	Triangle v;
+	v.v0 = readFromStream<float3>(s);
+	v.v0v1 = readFromStream<float3>(s);
+	v.v0v2 = readFromStream<float3>(s);
+	v.v0vt = readFromStream<float3>(s);
+	v.v1vt = readFromStream<float3>(s);
+	v.v2vt = readFromStream<float3>(s);
+	v.normal = readFromStream<float3>(s);
+	//v.material = readFromStream<Material>(s);
+	return v;
+}
+
+template<>
+void writeToStream<Triangle>(std::ostream &s, const Triangle &v) {
+	writeToStream(s, v.v0);
+	writeToStream(s, v.v0v1);
+	writeToStream(s, v.v0v2);
+	writeToStream(s, v.v0vt);
+	writeToStream(s, v.v1vt);
+	writeToStream(s, v.v2vt);
+	writeToStream(s, v.normal);
+	//writeToStream(s, v.material);
+}

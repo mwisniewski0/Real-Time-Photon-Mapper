@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include "../common/cutil_math.h"
+#include "streamWriter.h"
 
 #ifdef NO_CUDA
 #include "gpuTexturesNoCuda.h"
@@ -58,11 +59,12 @@ struct BoundingBox
 };
 
 struct Material {
-	float3 color;
-	float3 specularReflectivity;
-	float refractiveIndex;
-	int type; // 0 diffuse, 1 specular, 2 refractive, 3 diffuse-texture
-	GPUTexture texture;
+	float3 diffuse;
+	float3 specular;
+	float3 transmittance;
+	float shininess;
+	bool useDiffuseTexture; // checks wether to multiply diffuse by the texture
+	GPUTexture diffuseTexture;
 };
 
 class Shape
@@ -153,6 +155,13 @@ struct Triangle : public Shape {
 	float approxSurfaceArea() const override;
 	float3 center() const override;
 };
+
+
+template<>
+void writeToStream<Triangle>(std::ostream& s, const Triangle& v);
+
+template<>
+Triangle readFromStream<Triangle>(std::istream& s);
 
 struct PointLightSource {
 	float3 position;
