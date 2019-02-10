@@ -228,13 +228,13 @@ std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles)
 		BBoxTemp b;
 		b.triangle = triangle;
 
-		b.min = minf3(b.min, triangle.p);
-		b.min = minf3(b.min, triangle.p + triangle.v0);
-		b.min = minf3(b.min, triangle.p + triangle.v1);
+		b.min = minf3(b.min, triangle.v0);
+		b.min = minf3(b.min, triangle.v0 + triangle.v0v1);
+		b.min = minf3(b.min, triangle.v0 + triangle.v0v2);
 
-		b.max = maxf3(b.max, triangle.p);
-		b.max = maxf3(b.max, triangle.p + triangle.v0);
-		b.max = maxf3(b.max, triangle.p + triangle.v1);
+		b.max = maxf3(b.max, triangle.v0);
+		b.max = maxf3(b.max, triangle.v0 + triangle.v0v1);
+		b.max = maxf3(b.max, triangle.v0 + triangle.v0v2);
 
 		min = minf3(min, b.min);
 		max = maxf3(max, b.max);

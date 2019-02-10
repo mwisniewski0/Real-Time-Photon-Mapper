@@ -103,9 +103,9 @@ struct Sphere {
 // currently has sepparate scatter and texture info for each triangle
 // scatter and texture type and texture num should eventually be moved to mesh
 struct Triangle : public Shape {
-	float3 p;  // v0
-	float3 v0;   // v0->v1
-	float3 v1;   // v0->v2
+	float3 v0;
+	float3 v0v1;
+	float3 v0v2;
 	float3 normal; //precompute and store. may not be faster needs testing
 
 	Material material;
@@ -120,9 +120,9 @@ struct Triangle : public Shape {
 	// to the ray origin
 	__host__ __device__ float intersect(const Ray& r) const
 	{
-		float3 tvec = r.origin - p;
-		float3 pvec = cross(r.dir, v1);
-		float det = dot(v0, pvec);
+		float3 tvec = r.origin - v0;
+		float3 pvec = cross(r.dir, v0v2);
+		float det = dot(v0v1, pvec);
 
 		det = 1.0 / det;
 
@@ -130,14 +130,14 @@ struct Triangle : public Shape {
 		if (u < 0 || u > 1)
 			return -1e20;
 
-		float3 qvec = cross(tvec, v0);
+		float3 qvec = cross(tvec, v0v1);
 
 		float v = dot(r.dir, qvec) * det;
 
 		if (v < 0 || (u + v) > 1)
 			return -1e20;
 
-		return dot(v1, qvec) * det;
+		return dot(v0v2, qvec) * det;
 	}
 
 	static BoundingBox boundingBoxForMany(const std::vector<Triangle>& triangles);
@@ -163,9 +163,9 @@ inline __device__ __host__ float3 absoluteToBarycentric(const Triangle& t, const
 {
 	float3 result;
 
-	const float3& a = t.p;
-	float3 b = t.v0 + a;
-	float3 c = t.v1 + a;
+	const float3& a = t.v0;
+	float3 b = t.v0v1 + a;
+	float3 c = t.v0v2 + a;
 
 	float abcArea = triangleArea(a, b, c);
 	float capArea = triangleArea(c, a, p);

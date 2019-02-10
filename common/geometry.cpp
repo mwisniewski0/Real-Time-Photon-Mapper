@@ -35,26 +35,26 @@ float BoundingBox::getArea()
 Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, Material material)
 {
 	Triangle result;
-	result.p = v1;
-	result.v0 = v2 - v1;
-	result.v1 = v3 - v1;
+	result.v0 = v1;
+	result.v0v1 = v2 - v1;
+	result.v0v2 = v3 - v1;
 	result.material = material;
-	result.normal = normalize(cross(result.v0, result.v1));
+	result.normal = normalize(cross(result.v0v1, result.v0v2));
 	return result;
 }
 
 BoundingBox Triangle::getBoundingBox() const
 {
 	BoundingBox result;
-	return result.merge(p).merge(p + v0).merge(p + v1);
+	return result.merge(v0).merge(v0 + v0v1).merge(v0 + v0v2);
 }
 
 float Triangle::approxSurfaceArea() const
 {
-	return length(cross((v0), (v1))) * 0.5;
+	return length(cross((v0v1), (v0v2))) * 0.5;
 }
 
 float3 Triangle::center() const
 {
-	return (3 * p + v0 + v1) / 3.f;
+	return (3 * v0 + v0v1 + v0v2) / 3.f;
 }
