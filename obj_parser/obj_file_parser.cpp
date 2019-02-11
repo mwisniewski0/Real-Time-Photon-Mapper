@@ -61,6 +61,8 @@ void construct_material(Material *material_dst, tinyobj::material_t *material_sr
     material_dst->specular = make_float3(material_src->specular[0], material_src->specular[1], material_src->specular[2]);
     material_dst->transmittance = make_float3(material_src->transmittance[0], material_src->transmittance[1], material_src->transmittance[2]);
     material_dst->shininess = material_src->shininess;
+    material_dst->refractiveIndex = material_src->refractiveIndex;
+
 }
 
 
