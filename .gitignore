@@ -64,3 +64,10 @@ cmake-build-debug/
 
 # ingnoring test files that might appear while beau makes the .photon file
 obj_parser/*.dat
+
+# the bunny
+bun_*
+
+# photon file
+*.photon
+
