@@ -71,3 +71,5 @@ bun_*
 # photon file
 *.photon
 
+#node_modules
+node_modules/
