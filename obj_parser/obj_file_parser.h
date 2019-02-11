@@ -3,7 +3,6 @@
 //
 
 
-#define TINYOBJLOADER_IMPLEMENTATION ""
 #include "tiny_obj_loader.h"
 #include "./photon_builder.h"
 //
@@ -22,31 +21,22 @@
 //
 
 
-float3 *build_texcoords(tinyobj::index_t v0_index,
-                       tinyobj::index_t v1_index,
-                       tinyobj::index_t v2_index,
-                       std::vector<tinyobj::real_t> *texcoords
-);
+void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
+                     tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *texcoords);
 
 
-float3 *build_vertices(tinyobj::index_t v0_index,
-                       tinyobj::index_t v1_index,
-                       tinyobj::index_t v2_index,
-                       std::vector<tinyobj::real_t> *vertices
-);
+void build_vertices(float3 *triangle_vertices, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
+                    tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *vertices);
 
 
-Triangle create_and_push_triangle(tinyobj::index_t v0_index,
-                                  tinyobj::index_t v1_index,
-                                  tinyobj::index_t v2_index,
-                                  int material_index,
-                                  tinyobj::attrib_t *attrib,
-                                  std::vector<tinyobj::material_t> *materials
-);
+void construct_material(Material *material_dst, tinyobj::material_t *material_src);
+
+
+Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, tinyobj::index_t v2_index,
+                         int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials, unsigned long triangle_index);
 
 
 
-// for mesh in shape in shapes
 void add_mesh_triangles(tinyobj::mesh_t *mesh,
                         tinyobj::attrib_t *attrib,
                         std::vector<tinyobj::material_t> *materials,

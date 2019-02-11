@@ -2,6 +2,7 @@
 #include <istream>
 #include <ostream>
 #include "cutil_math.h"
+#include <vector>
 
 
 template <typename T>
@@ -19,6 +20,12 @@ void writeToStream(std::ostream& s, const T& v)
     s.write((char*)&v, sizeof(T));
 }
 
+template <>
+float3 readFromStream<float3>(std::istream& s);
+
+template<>
+void writeToStream<float3>(std::ostream& s, const float3& v);
+
 template <typename T>
 std::vector<T> readVectorFromStream(std::istream& s)
 {
@@ -29,6 +36,7 @@ std::vector<T> readVectorFromStream(std::istream& s)
     for (unsigned i = 0; i < size; ++i) {
         result.push_back(readFromStream<T>(s));
     }
+	return result;
 }
 
 template <typename T>

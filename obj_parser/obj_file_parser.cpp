@@ -56,15 +56,25 @@ void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyob
 }
 
 
+void construct_material(Material *material_dst, tinyobj::material_t *material_src) {
+    material_dst->diffuse = make_float3(material_src->diffuse[0], material_src->diffuse[1], material_src->diffuse[2]);
+    material_dst->specular = make_float3(material_src->specular[0], material_src->specular[1], material_src->specular[2]);
+    material_dst->transmittance = make_float3(material_src->transmittance[0], material_src->transmittance[1], material_src->transmittance[2]);
+    material_dst->shininess = material_src->shininess;
+}
+
+
 
 Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, tinyobj::index_t v2_index,
-        int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials) {
+        int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials, unsigned long triangle_index) {
 
 
     float3 triangle_verts[3];
     build_vertices(triangle_verts, v0_index, v1_index, v2_index, &(attrib->vertices));
 
-    Material new_mat;
+    Material new_mat = {};
+
+    construct_material(&new_mat, &(materials->at(triangle_index)));
 
     Triangle new_triangle = Triangle::from3Points(triangle_verts[0], triangle_verts[1], triangle_verts[2], new_mat);
 
@@ -91,7 +101,7 @@ void add_mesh_triangles(tinyobj::mesh_t *mesh, tinyobj::attrib_t *attrib, std::v
 
         int material_index = mesh->material_ids.at(j);
 
-        Triangle new_triangle = create_triangle(v1_index, v2_index, v3_index, material_index, attrib, materials);
+        Triangle new_triangle = create_triangle(v1_index, v2_index, v3_index, material_index, attrib, materials, j);
         triangles->push_back(new_triangle);
 
     }
@@ -123,17 +133,32 @@ int main(int argc, char **argv) {
     auto *attrib = new tinyobj::attrib_t;
     auto *shapes = new std::vector<tinyobj::shape_t>;
     auto *materials = new std::vector<tinyobj::material_t>;
-    std::string *warn;
-    std::string *err;
-    const char *filename = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/vonia/vonia.obj";
-    const char *mtl_basedir = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/vonia/materials/";
+    std::string warn;
+    std::string err;
+    const char *filename = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/lamborginhi/Lamborghini_Aventador.obj";
+    const char *mtl_basedir = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/lamborginhi";
 
 //    Reading obj and mat file
-    bool successful_obj_load = tinyobj::LoadObj(attrib, shapes, materials, warn, err, filename, mtl_basedir);
+    bool successful_obj_load = tinyobj::LoadObj(attrib, shapes, materials, &warn, &err, filename, mtl_basedir);
     if (!successful_obj_load) {
         std::cout << "obj file was unsuccessfully read!" << std::endl;
         return 1;
     }
+
+
+    tinyobj::material_t materials_arr[100];
+    unsigned long mat_size = materials->size();
+    for (int i = 0; i < materials->size() && i < 50; ++i) {
+        materials_arr[i] = materials->at(i);
+    }
+
+    tinyobj::shape_t shapes_arr[100];
+    unsigned long shapes_size = shapes->size();
+    for (int i = 0; i < shapes->size() && i < 50; ++i) {
+        shapes_arr[i] = shapes->at(i);
+    }
+
+
 
 //    initializing geometry from results of tinyobj::LoadObj
     std::vector<Triangle> triangles;

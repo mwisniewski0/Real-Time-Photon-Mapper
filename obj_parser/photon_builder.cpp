@@ -2,6 +2,8 @@
 // Created by Beau Carlborg on 2019-02-09.
 //
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "./photon_builder.h"
 
 

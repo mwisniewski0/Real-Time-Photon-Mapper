@@ -276,6 +276,7 @@ BVHGpuDataRaw readFromStream<BVHGpuDataRaw>(std::istream &s) {
 	BVHGpuDataRaw result;
 	result.bvhNodes = readVectorFromStream<GpuBvhNode>(s);
 	result.triangles = readVectorFromStream<Triangle>(s);
+	return result;
 }
 
 template<>

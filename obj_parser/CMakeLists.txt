@@ -1,6 +1,6 @@
 project(object_parser)
 
-add_executable(obj_file_parser ./obj_file_parser.cpp ../common/geometry.cpp ../common/bvh.cpp ../common/scene.cpp ./photon_builder.cpp ../common/ply.cpp)
+add_executable(obj_file_parser ./obj_file_parser.cpp ../common/geometry.cpp ../common/bvh.cpp ../common/scene.cpp ./photon_builder.cpp ../common/ply.cpp ../common/streamWriter.cpp)
 add_executable(photon_builder ./photon_builder.cpp ../common/geometry.cpp)
 
 
