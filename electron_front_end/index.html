@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico">
+  </head>
+  <body>
+    <main class="wrapper">
+        <h1 id="main-header">Photon</h1>
+
+        <button id='my-button' class="btn waves-effect waves-light">open photon file</button>
+    </main>
+    <script>
+        require('./renderer.js');
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+
+        document.getElementById("my-button").addEventListener("click", function (e) {
+            ipcRenderer.send('file:find');
+        });
+
+        ipcRenderer.on('file:invalid', (e, item) => {
+            let error_message = document.getElementById('invalid-file-error');
+            if (!(error_message)) {
+                error_message = document.createElement('p');
+                error_message.innerHTML = 'please select a file with a valid .photon extension';
+                error_message.id = "invalid-file-error";
+                const h1 = document.getElementById('main-header');
+                h1.after(error_message);
+            }
+
+        })
+
+
+        ipcRenderer.on('file:valid', (e, item) => {
+            const error_message = document.getElementById('invalid-file-error');
+            if (error_message) {
+                error_message.remove();
+            }
+        });
+
+    </script>
+    <style>
+        body {
+            background-color: #4285f4ff;
+        }
+
+
+        #invalid-file-error {
+            width: 250px;
+            background-color: pink;
+            color: red;
+        }
+
+        .wrapper {
+            padding-left: 75px;
+        }
+
+        h1 {
+            font-family: 'Pacifico';
+            font-size: 100px;
+            color: #FFF;
+        }
+    </style>
+  </body>
+</html>
