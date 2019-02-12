@@ -56,19 +56,19 @@ void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyob
 }
 
 
-void construct_material(Material *material_dst, tinyobj::material_t *material_src) {
+void construct_material(Material *material_dst, tinyobj::material_t *material_src, std::string *material_base_path) {
     material_dst->diffuse = make_float3(material_src->diffuse[0], material_src->diffuse[1], material_src->diffuse[2]);
     material_dst->specular = make_float3(material_src->specular[0], material_src->specular[1], material_src->specular[2]);
     material_dst->transmittance = make_float3(material_src->transmittance[0], material_src->transmittance[1], material_src->transmittance[2]);
     material_dst->shininess = material_src->shininess;
-    material_dst->refractiveIndex = material_src->refractiveIndex;
-
+    material_dst->refractiveIndex = material_src->ior;
+    material_dst->diffuseTexture = GPUTexture::fromPng(*material_base_path + material_src->diffuse_texname);
 }
 
 
 
 Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, tinyobj::index_t v2_index,
-        int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials, unsigned long triangle_index) {
+        int material_index, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials, unsigned long triangle_index, std::string *texture_base_path) {
 
 
     float3 triangle_verts[3];
@@ -76,7 +76,7 @@ Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, t
 
     Material new_mat = {};
 
-    construct_material(&new_mat, &(materials->at(triangle_index)));
+    construct_material(&new_mat, &(materials->at(mater)), texture_base_path);
 
     Triangle new_triangle = Triangle::from3Points(triangle_verts[0], triangle_verts[1], triangle_verts[2], new_mat);
 
@@ -93,9 +93,9 @@ Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, t
 
 
 void add_mesh_triangles(tinyobj::mesh_t *mesh, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials,
-        std::vector<Triangle> *triangles) {
+        std::vector<Triangle> *triangles, std::string *texture_base_path) {
 
-//    for triangle face in shape
+//  for triangle face in shape
     for (int i = 0, j = 0; i < mesh->indices.size(); i += 3, ++j) {
         tinyobj::index_t v1_index = mesh->indices.at(i);
         tinyobj::index_t v2_index = mesh->indices.at(i);
@@ -103,7 +103,7 @@ void add_mesh_triangles(tinyobj::mesh_t *mesh, tinyobj::attrib_t *attrib, std::v
 
         int material_index = mesh->material_ids.at(j);
 
-        Triangle new_triangle = create_triangle(v1_index, v2_index, v3_index, material_index, attrib, materials, j);
+        Triangle new_triangle = create_triangle(v1_index, v2_index, v3_index, material_index, attrib, materials, j, texture_base_path);
         triangles->push_back(new_triangle);
 
     }
@@ -111,22 +111,17 @@ void add_mesh_triangles(tinyobj::mesh_t *mesh, tinyobj::attrib_t *attrib, std::v
 
 
 
-void build_triangles_array(std::vector<tinyobj::shape_t> *shapes,
-        tinyobj::attrib_t *attrib,
-        std::vector<tinyobj::material_t> *materials,
-        std::vector<Triangle> *triangles) {
+void build_triangles_array(std::vector<tinyobj::shape_t> *shapes, tinyobj::attrib_t *attrib, std::vector<tinyobj::material_t> *materials,
+        std::vector<Triangle> *triangles, std::string *texture_base_path) {
 
 //  for each shape in the scene
     for (int i = 0; i < shapes->size(); ++i) {
         tinyobj::shape_t curr = shapes->at(i);
         tinyobj::mesh_t mesh = shapes->at(i).mesh;
-        add_mesh_triangles(&(mesh), attrib, materials, triangles);
+        add_mesh_triangles(&(mesh), attrib, materials, triangles, texture_base_path);
 
     }
 }
-
-
-
 
 
 int main(int argc, char **argv) {
@@ -139,6 +134,7 @@ int main(int argc, char **argv) {
     std::string err;
     const char *filename = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/lamborginhi/Lamborghini_Aventador.obj";
     const char *mtl_basedir = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/lamborginhi";
+    std::string texture_basedir = "/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/3ds_test_files/lamborginhi";
 
 //    Reading obj and mat file
     bool successful_obj_load = tinyobj::LoadObj(attrib, shapes, materials, &warn, &err, filename, mtl_basedir);
@@ -147,83 +143,14 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-
-    tinyobj::material_t materials_arr[100];
-    unsigned long mat_size = materials->size();
-    for (int i = 0; i < materials->size() && i < 50; ++i) {
-        materials_arr[i] = materials->at(i);
-    }
-
-    tinyobj::shape_t shapes_arr[100];
-    unsigned long shapes_size = shapes->size();
-    for (int i = 0; i < shapes->size() && i < 50; ++i) {
-        shapes_arr[i] = shapes->at(i);
-    }
-
-
-
-//    initializing geometry from results of tinyobj::LoadObj
     std::vector<Triangle> triangles;
-    build_triangles_array(shapes, attrib, materials, &triangles);
+    build_triangles_array(shapes, attrib, materials, &triangles, &texture_basedir);
+    
 
-    unsigned long num_faces = 0;
-    for (int i = 0; i < shapes->size(); ++i) {
-        num_faces += shapes->at(i).mesh.indices.size() / 3;
-
-    }
-    printf("number of triangles from tiny: %lu\n", num_faces);
-    printf("Size of the triangles array: %lu\n", triangles.size());
-
-
-    printf("moving triangles vector\n");
-
-    triangle_write(&triangles);
-
-    std::vector<Triangle> new_triangles;
-
-    triangle_read(&new_triangles);
-
-//    for (int i = 0; i < triangles.size(); ++i) {
-//        bool v0x = triangles.at(i).v0.x == new_triangles.at(i).v0.x;
-//        bool v0y = triangles.at(i).v0.y == new_triangles.at(i).v0.y;
-//        bool v0z = triangles.at(i).v0.z == new_triangles.at(i).v0.z;
-//
-//        bool v0 = v0x && v0y && v0z;
-//
-//        bool v1x = triangles.at(i).v0v1.x == new_triangles.at(i).v0v1.x;
-//        bool v1y = triangles.at(i).v0v1.y == new_triangles.at(i).v0v1.y;
-//        bool v1z = triangles.at(i).v0v1.z == new_triangles.at(i).v0v1.z;
-//
-//        bool v1 = v1x && v1y && v1z;
-//
-//        bool v2x = triangles.at(i).v0v2.x == new_triangles.at(i).v0v2.x;
-//        bool v2y = triangles.at(i).v0v2.y == new_triangles.at(i).v0v2.y;
-//        bool v2z = triangles.at(i).v0v2.z == new_triangles.at(i).v0v2.z;
-//
-//        bool v2 = v2x && v2y && v1z;
-//
-//        bool verts_eq = v0 && v1 && v2;
-//
-//        if (verts_eq) {
-//            printf("Triangles at %d are equal\n", i);
-//        }
-//        else {
-//            printf("Triangles at %d are NOT equal\n", i);
-//            return 0;
-//        }
-//
-//    }
-
-    auto ts = loadTriangles("/Users/beaucarlborg/CLionProjects/Real-Time-Photon-Mapper/bun_zipper.ply", {});
-    triCount = ts.size();
     printf("above build bvh\n");
-    buildBVH(std::move(ts));
+    buildBVH(std::move(triangles));
     printf("below build bvh\n");
 
 
-// TODO: add support for materials in some way shape or form
-// TODO: destroy the monolith file
-// TODO: change hardcoded file names into arguments
-// TODO: create test file for the whole disgusting mess
     return 0;
 }
