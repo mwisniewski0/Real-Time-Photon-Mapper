@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <iostream>
-#include "../cuda_common/gpuScene.h"
+#include "../common/scene.h"
 
 
 void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
@@ -63,6 +63,32 @@ void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyob
 
 }
 
+void build_normals(float3 *triangle_normals, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
+				   tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *normals) {
+
+	float v0vn0 = normals->at((3 * v0_index.normal_index));
+	float v0vn1 = normals->at((3 * v0_index.normal_index) + 1);
+	float v0vn2 = normals->at((3 * v0_index.normal_index) + 2);
+
+	triangle_normals[0] = make_float3(v0vn0, v0vn1, v0vn2);
+
+
+	float v1vn0 = normals->at((3 * v0_index.normal_index));
+	float v1vn1 = normals->at((3 * v0_index.normal_index) + 1);
+	float v1vn2 = normals->at((3 * v0_index.normal_index) + 2);
+
+	triangle_normals[0] = make_float3(v1vn0, v1vn1, v1vn2);
+
+
+	float v2vn0 = normals->at((3 * v0_index.normal_index));
+	float v2vn1 = normals->at((3 * v0_index.normal_index) + 1);
+	float v2vn2 = normals->at((3 * v0_index.normal_index) + 2);
+
+	triangle_normals[0] = make_float3(v2vn0, v2vn1, v2vn2);
+
+
+}
+
 
 void construct_material(MaterialInfo* material_dst, tinyobj::material_t *material_src, std::string *texture_base_path) {
 	material_dst->material.diffuse = make_float3(1);// material_src->diffuse[0], material_src->diffuse[1], material_src->diffuse[2]);
@@ -97,9 +123,18 @@ Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, t
     float3 triangle_vert_texcoords[3];
     build_texcoords(triangle_vert_texcoords, v0_index, v1_index, v2_index, &(attrib->texcoords));
 
-    new_triangle.v0vt = triangle_vert_texcoords[0];
-    new_triangle.v1vt = triangle_vert_texcoords[1];
-    new_triangle.v2vt = triangle_vert_texcoords[2];
+	new_triangle.v0vt = triangle_vert_texcoords[0];
+	new_triangle.v1vt = triangle_vert_texcoords[1];
+	new_triangle.v2vt = triangle_vert_texcoords[2];
+
+
+    float3 triangle_normals[3];
+    build_normals(triangle_normals, v0_index, v1_index, v2_index, &(attrib->normals));
+
+	new_triangle.v0vn = triangle_normals[0];
+	new_triangle.v1vn = triangle_normals[1];
+	new_triangle.v2vn = triangle_normals[2];
+
 
     return new_triangle;
 }

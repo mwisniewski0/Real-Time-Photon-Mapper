@@ -9,7 +9,12 @@
 
 #include "../common/geometry.h"
 #include "../common/bvh.h"
-#include "../cuda_common/gpuScene.h"
+#include "../common/scene.h"
+
+
+void build_normals(float3 *triangle_normals, tinyobj::index_t v0_index, tinyobj::index_t v1_index,
+                   tinyobj::index_t v2_index, std::vector<tinyobj::real_t> *normals);
+
 
 
 Scene loadObj(const std::string& objPath, const std::string& mtlBaseDir, const std::string& textureBaseDir);
