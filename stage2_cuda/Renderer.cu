@@ -98,13 +98,11 @@ Scene Renderer::loadModel()
 	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
 	// is hardcoded (our model loading code is still in production).
 	
-	std::vector<Triangle> triangles; // = loadTriangles("models/bun_zipper.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 1.4f, 0x0002 });
-	auto texture = GPUTexture::fromPng("models/bricks.png");
+	std::vector<Triangle> triangles;// = loadTriangles("models/dragon_vrip.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 1.4f, 0x0000 });
+	auto bricks = GPUTexture::fromPng("models/bricks.png");
 	auto asphalt = GPUTexture::fromPng("models/asphalt.png");
 
 	Scene scene;
-
-
 
 	Triangle2 t;
 
@@ -113,11 +111,13 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, 1 };
 	t.c = { -1, -1, 1 };
 	t.material = {
-		{ 1, 0, 0 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0001, // type
-		asphalt
+		{ 0, 0, 0 }, // diffuse
+		{ 0.8f, 0.8f, 0.8f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
 	auto tri = t.toTriangle();
 	tri.v0vt = make_float3(0.0f, 0.0f, 0.0f);
@@ -130,11 +130,13 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, 1 };
 	t.c = { -1, -1, 1 };
 	t.material = {
-		{ 1, 0, 0 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0001, // type
-		asphalt
+		{ 0, 0, 0 }, // diffuse
+		{ 0.8f, 0.8f, 0.8f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
 	tri = t.toTriangle();
 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
@@ -146,12 +148,15 @@ Scene Renderer::loadModel()
 	t.a = { -1, 1, -4 };
 	t.b = { 1, 1, -4 };
 	t.c = { -1, -1, -4 };
+
 	t.material = {
-		{ 0, 1, 0 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000, // type
-		texture
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
 	tri = t.toTriangle();
 	tri.v0vt = make_float3(0.0f, 0.0f, 0.0f);
@@ -163,11 +168,13 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 0, 1, 0 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000, // type
-		texture
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
 	tri = t.toTriangle();
 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
@@ -180,11 +187,13 @@ Scene Renderer::loadModel()
 	t.b = { -1, 1, 1 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 1, 1, 1 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0003, // type
-		asphalt
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
 	tri = t.toTriangle();
 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
@@ -196,32 +205,51 @@ Scene Renderer::loadModel()
 	t.b = { -1, 1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 1, 1, 1 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000 // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
-	triangles.push_back(t.toTriangle());
+	tri = t.toTriangle();
+	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+	triangles.push_back(tri);
+
 
 	// Right wall
 	t.a = { 1, -1, 1 };
 	t.b = { 1, 1, 1 };
 	t.c = { 1, -1, -4 };
 	t.material = {
-		{ 1, 1, 0 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000 // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
-	triangles.push_back(t.toTriangle());
+	tri = t.toTriangle();
+	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+	triangles.push_back(tri);
+
 	t.a = { 1, 1, 1 };
 	t.b = { 1, 1, -4 };
 	t.c = { 1, -1, -4 };
 	t.material = {
-		{ 1, 1, 1}, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000 // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
+		bricks
 	};
 	triangles.push_back(t.toTriangle());
 
@@ -231,10 +259,12 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, 1 };
 	t.c = { -1, 1, -4 };
 	t.material = {
-		{ 1, 1, 1 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000 // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		false
 	};
 	triangles.push_back(t.toTriangle());
 
@@ -243,10 +273,12 @@ Scene Renderer::loadModel()
 	t.b = { 1, 1, -4 };
 	t.c = { -1, 1, -4 };
 	t.material = {
-		{ 1, 1, 1 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000 // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		false
 	};
 	triangles.push_back(t.toTriangle());
 
@@ -256,10 +288,12 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, 1 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 1, 1, 1 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000, // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
 		asphalt
 	};
 	tri = t.toTriangle();
@@ -273,10 +307,12 @@ Scene Renderer::loadModel()
 	t.b = { 1, -1, -4 };
 	t.c = { -1, -1, -4 };
 	t.material = {
-		{ 1, 0, 1 }, // color
-		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-		2.5,  // refractive index (diamond)
-		0x0000, // type
+		{ 1.0f, 1.0f, 1.0f }, // diffuse
+		{ 0.0f, 0.0f, 0.0f }, // specular
+		{ 0.f, 0.f, 0.f }, // transmission
+		1.0f,  // shininess
+		2.5f,  // refractive index (diamond)
+		true,
 		asphalt
 	};
 	tri = t.toTriangle();
@@ -366,20 +402,38 @@ Scene Renderer::loadModel()
 	scene.spheres.emplace_back();
 	scene.spheres[scene.spheres.size() - 1] = {
 		{ -0.5f, 0.3f, 0 }, 0.2f,
-		{ { 0,0,0 },
-		{ 0.89f, 0.83f, 0.81f }, 2.5f, 1 },
+		{
+			{ 0.0f, 0.0f, 0.0f }, // diffuse
+			{ 0.89f, 0.89f, 0.89f }, // specular
+			{ 0.0f, 0.0f, 0.f }, // transmission
+			1.0f,  // shininess
+			2.5f,  // refractive index (diamond)
+			false
+		}
 	};
 	// scene.spheres.emplace_back();
 	// scene.spheres[scene.spheres.size() - 1] = {
 	// 	{ 0, -0.3f, 0 }, 0.2f,
-	// 	{ { 0,0,0 },
-	// 	{ 0.77f, 0.83f, 0.81f }, 1.3f, 2 },
+	// 	{
+	// 		{ 0.0f, 0.0f, 0.0f }, // diffuse
+	// 		{ 0.0f, 0.0f, 0.0f }, // specular
+	// 		{ 0.9f, 0.9f, 0.9f }, // transmission
+	// 		1.0f,  // shininess
+	// 		1.7f,  // refractive index (diamond)
+	// 		false
+	// 	}
 	// };
 	scene.spheres.emplace_back();
 	scene.spheres[scene.spheres.size() - 1] = {
 		{ 0.5f, 0.3f, 0 }, 0.2f,
-		{ { 0,0,0 },
-		{ 0.89f, 0.83f, 0.81f }, 2.5f, 1 },
+		{
+			{ 0.0f, 0.0f, 0.0f }, // diffuse
+			{ 0.89f, 0.89f, 0.89f }, // specular
+			{ 0.f, 0.f, 0.f }, // transmission
+			1.0f,  // shininess
+			2.5f,  // refractive index (diamond)
+			false
+		},
 	};
 	scene.triangles = std::move(triangles);
 

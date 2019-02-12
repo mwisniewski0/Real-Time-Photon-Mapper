@@ -8,7 +8,6 @@
 #include "cuda_gl_interop.h"
 #include "../common/geometry.h"
 #include "../common/cutil_math.h"
-#include <iostream>
 #include "../cuda_common/gpuBvh.h"
 #include "../cuda_common/gpuScene.h"
 
@@ -76,11 +75,6 @@ __device__ bool intersectRayAndSphere(const Ray& ray, const Sphere& s, RayHit* h
 	return true;
 }
 
-__device__ float lengthSquared(float3 v)
-{
-	return dot(v, v);
-}
-
 __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
 									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
@@ -92,15 +86,14 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 		result->pointOfHit = ray.pointAtDistance(closestHitDistance);
 		result->normal = getNormalAwayFromRay(ray, *intersectedTriangle);
 		result->material = intersectedTriangle->material;
-		result->color = result->material.color;
+		result->color = result->material.diffuse;
 
-		if (intersectedTriangle->material.type == 3)
+		if (intersectedTriangle->material.useDiffuseTexture)
 		{
 			auto bary = absoluteToBarycentric(*intersectedTriangle, result->pointOfHit);
 			float3 texel = applyBarycentric(bary, intersectedTriangle->v0vt,
 				intersectedTriangle->v1vt, intersectedTriangle->v2vt);
-			// printf("%f %f %f | %f %f %f\n", bary.x, bary.y, bary.z);
-			result->color = result->material.texture.getTexelColor(texel.x, texel.y);
+			result->color *= result->material.diffuseTexture.getTexelColor(texel.x, texel.y);
 		}
 	}
 
@@ -113,11 +106,17 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 			{
 				closestHitDistance = distanceSquared;
 				*result = tempResult;
+				result->color = result->material.diffuse;
 			}
 		}
 	}
 
 	return closestHitDistance < 1e19;
+}
+
+__device__ float lengthSquared(const float3& v)
+{
+	return dot(v, v);
 }
 
 __device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
@@ -218,6 +217,7 @@ __device__ float calculateReflectRatio(float n1, float n2, const float3& normal,
 	return ret;
 }
 
+
 __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 	const int MAX_RAY_BOUNCE = 15;
 
@@ -240,50 +240,50 @@ __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
 			break;
 		}
 
-		if (hit.material.type == 1)
+		if (lengthSquared(hit.material.specular) > EPSILON)
 		{
 			// Reflective
 			++lastRay;
 			if (lastRay == MAX_RAY_BOUNCE) continue;
-			rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity;
+			rays[lastRay].currentModifier = split.currentModifier * hit.material.specular;
 			rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
 			rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
 		}
-		else if (hit.material.type == 2)
+		if (lengthSquared(hit.material.transmittance) > EPSILON)
 		{
 			// Refractive
 			if (dot(hit.normal, r.dir) < 0) {
 				float reflectRatio = calculateReflectRatio(AIR_REFRACTIVE_INDEX, hit.material.refractiveIndex, hit.normal, r.dir);
-
+		
 				++lastRay;
-				if (lastRay == MAX_RAY_BOUNCE) continue;
-				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * (1.0f - reflectRatio);
+				if (lastRay == MAX_RAY_BOUNCE) continue;  // This is so that we don't get out of scope of rays[]
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.transmittance * (1.0f - reflectRatio);
 				rays[lastRay].ray.origin = hit.pointOfHit + (-hit.normal * EPSILON);
 				rays[lastRay].ray.dir = refract(r.dir, hit.normal, 1.0 / hit.material.refractiveIndex);
-
+		
 				++lastRay;
 				if (lastRay == MAX_RAY_BOUNCE) continue;
-				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * reflectRatio;
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.transmittance * reflectRatio;
 				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
 				rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
 			}
 			else {
 				float reflectRatio = calculateReflectRatio(hit.material.refractiveIndex, AIR_REFRACTIVE_INDEX, -hit.normal, r.dir);
-
+		
 				++lastRay;
 				if (lastRay == MAX_RAY_BOUNCE) continue;
-				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * (1.0f - reflectRatio);
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.transmittance * (1.0f - reflectRatio);
 				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
 				rays[lastRay].ray.dir = refract(r.dir, -hit.normal, 1.0 / hit.material.refractiveIndex);
-
+		
 				++lastRay;
 				if (lastRay == MAX_RAY_BOUNCE) continue;
-				rays[lastRay].currentModifier = split.currentModifier * hit.material.specularReflectivity * reflectRatio;
+				rays[lastRay].currentModifier = split.currentModifier * hit.material.transmittance * reflectRatio;
 				rays[lastRay].ray.origin = hit.pointOfHit + (hit.normal * EPSILON);
 				rays[lastRay].ray.dir = reflect(r.dir, hit.normal);
 			}
 		}
-		else
+		if (lengthSquared(hit.color) > EPSILON)
 		{
 			// Diffuse
 			currentIllumination += split.currentModifier * getHitIllumination(scene, hit) * hit.color;
