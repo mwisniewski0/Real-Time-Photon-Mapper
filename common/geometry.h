@@ -68,6 +68,7 @@ struct Material {
 	bool useDiffuseTexture; // checks whether to multiply diffuse by the texture
 	GPUTexture diffuseTexture;
 };
+
 class Shape
 {
 public:
