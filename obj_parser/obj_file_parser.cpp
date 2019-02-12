@@ -76,7 +76,7 @@ Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, t
 
     Material new_mat = {};
 
-    construct_material(&new_mat, &(materials->at(mater)), texture_base_path);
+    construct_material(&new_mat, &(materials->at(material_index)), texture_base_path);
 
     Triangle new_triangle = Triangle::from3Points(triangle_verts[0], triangle_verts[1], triangle_verts[2], new_mat);
 
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 
     std::vector<Triangle> triangles;
     build_triangles_array(shapes, attrib, materials, &triangles, &texture_basedir);
-    
+
 
     printf("above build bvh\n");
     buildBVH(std::move(triangles));
