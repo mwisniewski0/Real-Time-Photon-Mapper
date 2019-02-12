@@ -5,6 +5,6 @@
 #include <string>
 
 
-std::vector<Triangle> loadTriangles(const std::string& path, Material m);
+std::vector<Triangle> loadTriangles(const std::string& path, unsigned materialIndex);
 
 #endif

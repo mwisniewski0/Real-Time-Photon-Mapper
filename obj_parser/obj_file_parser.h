@@ -4,14 +4,15 @@
 
 
 #include "tiny_obj_loader.h"
-#include "./photon_builder.h"
 //
 //#include "beau_geometry.h"
 
 #include "../common/geometry.h"
 #include "../common/bvh.h"
+#include "../cuda_common/gpuScene.h"
 
 
+Scene loadObj(const std::string& objPath, const std::string& mtlBaseDir, const std::string& textureBaseDir);
 
 
 // returns a new triangle struct for the current face being read from the obj file

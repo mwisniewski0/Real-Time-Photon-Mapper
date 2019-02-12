@@ -26,6 +26,12 @@ float3 readFromStream<float3>(std::istream& s);
 template<>
 void writeToStream<float3>(std::ostream& s, const float3& v);
 
+template <>
+std::string readFromStream<std::string>(std::istream& s);
+
+template<>
+void writeToStream<std::string>(std::ostream& s, const std::string& v);
+
 template <typename T>
 std::vector<T> readVectorFromStream(std::istream& s)
 {

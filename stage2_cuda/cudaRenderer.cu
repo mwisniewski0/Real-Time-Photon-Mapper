@@ -77,7 +77,7 @@ __device__ bool intersectRayAndSphere(const Ray& ray, const Sphere& s, RayHit* h
 
 __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
 	float closestHitDistance = 1e20;  // Infinity
-									  //printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
+									  // printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
 
 	RayHit tempResult;
 	auto intersectedTriangle = scene.triangleBvh.intersectRay(ray, closestHitDistance);
@@ -85,10 +85,10 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 	{
 		result->pointOfHit = ray.pointAtDistance(closestHitDistance);
 		result->normal = getNormalAwayFromRay(ray, *intersectedTriangle);
-		result->material = intersectedTriangle->material;
+		result->material = scene.materials.contents[intersectedTriangle->materialIndex];
 		result->color = result->material.diffuse;
 
-		if (intersectedTriangle->material.useDiffuseTexture)
+		if (result->material.useDiffuseTexture)
 		{
 			auto bary = absoluteToBarycentric(*intersectedTriangle, result->pointOfHit);
 			float3 texel = applyBarycentric(bary, intersectedTriangle->v0vt,
@@ -119,41 +119,41 @@ __device__ float lengthSquared(const float3& v)
 	return dot(v, v);
 }
 
-__device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
-	float closestHitDistance = 1e20;  // Infinity
-									  // printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
-
-	RayHit tempResult;
-	for (int i = 0; i < scene.triangleBvh.triangles.size; ++i)
-	{
-		float d = scene.triangleBvh.triangles.contents[i].intersect(ray);
-		if (d > 0)
-		{
-			if (closestHitDistance > d)
-			{
-				closestHitDistance = d;
-				result->pointOfHit = ray.pointAtDistance(closestHitDistance);
-				result->normal = getNormalAwayFromRay(ray, scene.triangleBvh.triangles.contents[i]);
-				result->material = scene.triangleBvh.triangles.contents[i].material;
-			}
-		}
-	}
-
-	for (int i = 0; i < scene.spheres.size; ++i)
-	{
-		if (intersectRayAndSphere(ray, scene.spheres.contents[i], &tempResult))
-		{
-			float distanceSquared = length(ray.origin - tempResult.pointOfHit);
-			if (closestHitDistance > distanceSquared)
-			{
-				closestHitDistance = distanceSquared;
-				*result = tempResult;
-			}
-		}
-	}
-
-	return closestHitDistance < 1e19;
-}
+// __device__ bool castRayNaive(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
+// 	float closestHitDistance = 1e20;  // Infinity
+// 									  // printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
+//
+// 	RayHit tempResult;
+// 	for (int i = 0; i < scene.triangleBvh.triangles.size; ++i)
+// 	{
+// 		float d = scene.triangleBvh.triangles.contents[i].intersect(ray);
+// 		if (d > 0)
+// 		{
+// 			if (closestHitDistance > d)
+// 			{
+// 				closestHitDistance = d;
+// 				result->pointOfHit = ray.pointAtDistance(closestHitDistance);
+// 				result->normal = getNormalAwayFromRay(ray, scene.triangleBvh.triangles.contents[i]);
+// 				result->material = scene.triangleBvh.triangles.contents[i].material;
+// 			}
+// 		}
+// 	}
+//
+// 	for (int i = 0; i < scene.spheres.size; ++i)
+// 	{
+// 		if (intersectRayAndSphere(ray, scene.spheres.contents[i], &tempResult))
+// 		{
+// 			float distanceSquared = length(ray.origin - tempResult.pointOfHit);
+// 			if (closestHitDistance > distanceSquared)
+// 			{
+// 				closestHitDistance = distanceSquared;
+// 				*result = tempResult;
+// 			}
+// 		}
+// 	}
+//
+// 	return closestHitDistance < 1e19;
+// }
 
 __device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) {
 	float3 illumination = make_float3(0.2, 0.2, 0.2);
@@ -174,7 +174,6 @@ __device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) 
 			illumination += scene.lights.contents[i].intensity * dot(normalize(vectorToLight), hit.normal);
 		}
 	}
-
 
 	return illumination;
 }

@@ -32,13 +32,51 @@ float BoundingBox::getArea()
 	return dot((maxCoords - minCoords), (maxCoords - minCoords));
 }
 
-Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, Material material)
+Material MaterialInfo::loadWithTexture() const
+{
+	Material result = material;
+	if (result.useDiffuseTexture)
+	{
+		result.diffuseTexture = GPUTexture::fromPng(diffuseTexturePath);
+	}
+	return result;
+}
+
+template<>
+void writeToStream<MaterialInfo>(std::ostream& s, const MaterialInfo& v)
+{
+	writeToStream(s, v.material.transmittance);
+	writeToStream(s, v.material.specular);
+	writeToStream(s, v.material.diffuse);
+	writeToStream(s, v.material.useDiffuseTexture);
+	writeToStream(s, v.material.refractiveIndex);
+	writeToStream(s, v.material.shininess);
+	writeToStream(s, v.diffuseTexturePath);
+}
+
+template<>
+MaterialInfo readFromStream<MaterialInfo>(std::istream& s)
+{
+	MaterialInfo result;
+
+	result.material.transmittance = readFromStream<float3>(s);
+	result.material.specular = readFromStream<float3>(s);
+	result.material.diffuse = readFromStream<float3>(s);
+	result.material.useDiffuseTexture = readFromStream<bool>(s);
+	result.material.refractiveIndex = readFromStream<float>(s);
+	result.material.shininess = readFromStream<float>(s);
+	result.diffuseTexturePath = readFromStream<std::string>(s);
+
+	return result;
+}
+
+Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, unsigned materialIndex)
 {
 	Triangle result;
 	result.v0 = v1;
 	result.v0v1 = v2 - v1;
 	result.v0v2 = v3 - v1;
-	result.material = material;
+	result.materialIndex = materialIndex;
 	result.normal = normalize(cross(result.v0v1, result.v0v2));
 	return result;
 }
@@ -69,7 +107,23 @@ Triangle readFromStream<Triangle>(std::istream &s) {
 	v.v1vt = readFromStream<float3>(s);
 	v.v2vt = readFromStream<float3>(s);
 	v.normal = readFromStream<float3>(s);
-	//v.material = readFromStream<Material>(s);
+	v.materialIndex = readFromStream<unsigned>(s);
+	return v;
+}
+
+template <>
+void writeToStream<PointLightSource>(std::ostream& s, const PointLightSource& v)
+{
+	writeToStream(s, v.position);
+	writeToStream(s, v.intensity);
+}
+
+template <>
+PointLightSource readFromStream<PointLightSource>(std::istream& s)
+{
+	PointLightSource v;
+	v.position = readFromStream<float3>(s);
+	v.intensity = readFromStream<float3>(s);
 	return v;
 }
 
@@ -82,5 +136,5 @@ void writeToStream<Triangle>(std::ostream &s, const Triangle &v) {
 	writeToStream(s, v.v1vt);
 	writeToStream(s, v.v2vt);
 	writeToStream(s, v.normal);
-	//writeToStream(s, v.material);
+	writeToStream(s, v.materialIndex);
 }

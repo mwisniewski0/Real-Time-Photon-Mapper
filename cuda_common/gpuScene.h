@@ -8,7 +8,11 @@ struct SceneInfo
 {
 	GPUVector<Sphere> spheres;
 	GPUVector<PointLightSource> lights;
+	GPUVector<Material> materials;
 	BVHGpuData triangleBvh;
 
 	static SceneInfo fromScene(const Scene& scene);
 };
+
+
+BVHGpuData rawBVHToGpu(const BVHGpuDataRaw& data);

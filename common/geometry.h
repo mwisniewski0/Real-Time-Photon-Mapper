@@ -69,6 +69,19 @@ struct Material {
 	GPUTexture diffuseTexture;
 };
 
+struct MaterialInfo {
+	Material material;
+	std::string diffuseTexturePath;
+
+	Material loadWithTexture() const;
+};
+
+template<>
+void writeToStream<MaterialInfo>(std::ostream& s, const MaterialInfo& v);
+
+template<>
+MaterialInfo readFromStream<MaterialInfo>(std::istream& s);
+
 class Shape
 {
 public:
@@ -117,7 +130,7 @@ struct Triangle : public Shape {
 	float3 v0v2;
 	float3 normal; //precompute and store. may not be faster needs testing
 
-	Material material;
+	unsigned materialIndex;
 
 	// Z-part of these will be ignored
 	float3 v0vt;
@@ -151,13 +164,12 @@ struct Triangle : public Shape {
 
 	static BoundingBox boundingBoxForMany(const std::vector<Triangle>& triangles);
 
-	static Triangle from3Points(float3 v1, float3 v2, float3 v3, Material material);
+	static Triangle from3Points(float3 v1, float3 v2, float3 v3, unsigned materialIndex);
 
 	BoundingBox getBoundingBox() const override;
 	float approxSurfaceArea() const override;
 	float3 center() const override;
 };
-
 
 template<>
 void writeToStream<Triangle>(std::ostream& s, const Triangle& v);
@@ -169,6 +181,13 @@ struct PointLightSource {
 	float3 position;
 	float3 intensity;
 };
+
+template<>
+void writeToStream<PointLightSource>(std::ostream& s, const PointLightSource& v);
+
+template<>
+PointLightSource readFromStream<PointLightSource>(std::istream& s);
+
 
 inline float triangleArea(const float3& v0, const float3& v1, const float3& v2)
 {

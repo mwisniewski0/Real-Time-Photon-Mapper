@@ -8,6 +8,8 @@
 #include "cudaRenderer.h"
 #include "GlHelp.h"
 #include "sdlHelpers.h"
+#include "../obj_parser/obj_file_parser.h"
+#include <fstream>
 
 
 // Photon-defined SDL messages
@@ -85,364 +87,340 @@ void Renderer::initGL()
 struct Triangle2
 {
 	float3 a, b, c;
-	Material material;
+	unsigned materialIndex;
 
 	Triangle toTriangle()
 	{
-		return Triangle::from3Points(a, b, c, material);
+		return Triangle::from3Points(a, b, c, materialIndex);
 	}
 };
 
 Scene Renderer::loadModel()
 {
-	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
-	// is hardcoded (our model loading code is still in production).
-	
-	std::vector<Triangle> triangles;// = loadTriangles("models/dragon_vrip.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 1.4f, 0x0000 });
-	auto bricks = GPUTexture::fromPng("models/bricks.png");
-	auto asphalt = GPUTexture::fromPng("models/asphalt.png");
-
-	Scene scene;
-
-	Triangle2 t;
-
-	// Back wall
-	t.a = { -1, 1, 1 };
-	t.b = { 1, 1, 1 };
-	t.c = { -1, -1, 1 };
-	t.material = {
-		{ 0, 0, 0 }, // diffuse
-		{ 0.8f, 0.8f, 0.8f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	auto tri = t.toTriangle();
-	tri.v0vt = make_float3(0.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-
-	t.a = { 1, 1, 1 };
-	t.b = { 1, -1, 1 };
-	t.c = { -1, -1, 1 };
-	t.material = {
-		{ 0, 0, 0 }, // diffuse
-		{ 0.8f, 0.8f, 0.8f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-	// Front wall
-	t.a = { -1, 1, -4 };
-	t.b = { 1, 1, -4 };
-	t.c = { -1, -1, -4 };
-
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(0.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-	t.a = { 1, 1, -4 };
-	t.b = { 1, -1, -4 };
-	t.c = { -1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-	// Left wall
-	t.a = { -1, -1, 1 };
-	t.b = { -1, 1, 1 };
-	t.c = { -1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-	t.a = { -1, 1, 1 };
-	t.b = { -1, 1, -4 };
-	t.c = { -1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-
-	// Right wall
-	t.a = { 1, -1, 1 };
-	t.b = { 1, 1, 1 };
-	t.c = { 1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-	t.a = { 1, 1, 1 };
-	t.b = { 1, 1, -4 };
-	t.c = { 1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		bricks
-	};
-	triangles.push_back(t.toTriangle());
-
-
-	// Top wall
-	t.a = { -1, 1, 1 };
-	t.b = { 1, 1, 1 };
-	t.c = { -1, 1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		false
-	};
-	triangles.push_back(t.toTriangle());
-
-
-	t.a = { 1, 1, 1 };
-	t.b = { 1, 1, -4 };
-	t.c = { -1, 1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		false
-	};
-	triangles.push_back(t.toTriangle());
-
-
-	// Bottom wall
-	t.a = { -1, -1, 1 };
-	t.b = { 1, -1, 1 };
-	t.c = { -1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		asphalt
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-
-	t.a = { 1, -1, 1 };
-	t.b = { 1, -1, -4 };
-	t.c = { -1, -1, -4 };
-	t.material = {
-		{ 1.0f, 1.0f, 1.0f }, // diffuse
-		{ 0.0f, 0.0f, 0.0f }, // specular
-		{ 0.f, 0.f, 0.f }, // transmission
-		1.0f,  // shininess
-		2.5f,  // refractive index (diamond)
-		true,
-		asphalt
-	};
-	tri = t.toTriangle();
-	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
-	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
-	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
-	triangles.push_back(tri);
-
-//
-//	// prism
-//	t.a = { 0, 0.5, 0 }; // A
-//	t.b = { 0, 0, 0.5 }; // B
-//	t.c = { -0.5, 0, 0 }; // C
-//	t.material = {
-//		{ 1, 1, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-// TODO: add  triangles.push_back(t);
-//	t.a = { 0, 0.5, 0 }; // A
-//	t.b = { -0.5, 0, 0 }; // C
-//	t.c = { 0, 0, -0.5 }; // D
-//	t.material = {
-//		{ 1, 0, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-//	t.a = { 0, 0.5, 0 }; // A
-//	t.b = { 0, 0, -0.5 }; // D
-//	t.c = { 0.5, 0, 0 }; // E
-//	t.material = {
-//		{ 0, 0, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-//	t.a = { 0, 0.5, 0 }; // A
-//	t.b = { 0.5, 0, 0 }; // E
-//	t.c = { 0, 0, 0.5 }; // B
-//	t.material = {
-//		{ 1, 0, 0 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-//
-//
-//	t.a = { 0, -0.5, 0 }; // F
-//	t.b = { 0, 0, 0.5 }; // B
-//	t.c = { -0.5, 0, 0 }; // C
-//	t.material = {
-//		{ 1, 0, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-//	t.a = { 0, -0.5, 0 }; // F
-//	t.b = { -0.5, 0, 0 }; // C
-//	t.c = { 0, 0, -0.5 }; // D
-//	t.material = {
-//		{ 1, 0, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-//	t.a = { 0, -0.5, 0 }; // F
-//	t.b = { 0, 0, -0.5 }; // D
-//	t.c = { 0.5, 0, 0 }; // E
-//	t.material = {
-//		{ 1, 0, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-//	t.a = { 0, -0.5, 0 }; // F
-//	t.b = { 0.5, 0, 0 }; // E
-//	t.c = { 0, 0, 0.5 }; // B
-//	t.material = {
-//		{ 1, 0, 1 }, // color
-//		{ 0.8f, 0.8f, 0.8f }, // reflectivity
-//		2.5,  // refractive index (diamond)
-//		0x0002 // type
-//	};
-
-	scene.spheres.emplace_back();
-	scene.spheres[scene.spheres.size() - 1] = {
-		{ -0.5f, 0.3f, 0 }, 0.2f,
-		{
-			{ 0.0f, 0.0f, 0.0f }, // diffuse
-			{ 0.89f, 0.89f, 0.89f }, // specular
-			{ 0.0f, 0.0f, 0.f }, // transmission
-			1.0f,  // shininess
-			2.5f,  // refractive index (diamond)
-			false
-		}
-	};
-	// scene.spheres.emplace_back();
-	// scene.spheres[scene.spheres.size() - 1] = {
-	// 	{ 0, -0.3f, 0 }, 0.2f,
-	// 	{
-	// 		{ 0.0f, 0.0f, 0.0f }, // diffuse
-	// 		{ 0.0f, 0.0f, 0.0f }, // specular
-	// 		{ 0.9f, 0.9f, 0.9f }, // transmission
-	// 		1.0f,  // shininess
-	// 		1.7f,  // refractive index (diamond)
-	// 		false
-	// 	}
-	// };
-	scene.spheres.emplace_back();
-	scene.spheres[scene.spheres.size() - 1] = {
-		{ 0.5f, 0.3f, 0 }, 0.2f,
-		{
-			{ 0.0f, 0.0f, 0.0f }, // diffuse
-			{ 0.89f, 0.89f, 0.89f }, // specular
-			{ 0.f, 0.f, 0.f }, // transmission
-			1.0f,  // shininess
-			2.5f,  // refractive index (diamond)
-			false
-		},
-	};
-	scene.triangles = std::move(triangles);
-
-	scene.lights.push_back(PointLightSource{
-		{0, 0.8f, 0},
-		{1, 1, 1},
-		});
-
+	// auto file = std::ifstream("C::\\test\\shitsies.photon", std::ios_base::binary | std::ios_base::in);
+	// return readFromStream<Scene>(file);
+	auto scene = loadObj("C:\\Users\\m_wis\\Documents\\3dsMax\\export\\vonia\\vonia.obj",
+		"C:\\Users\\m_wis\\Documents\\3dsMax\\export\\vonia\\",
+		"");
 	return scene;
+	// auto file = std::ofstream("C:\\test\\shitsies.photon", std::ios_base::binary | std::ios_base::out);
+	// writeToStream(file, scene);
+	// return scene;
+	// return loadObj("C:/Code/photon/renderer/sdlTest/sdlTest/stage2_cuda/models/bunny.obj",
+	// 	"C:/Code/photon/renderer/sdlTest/sdlTest/stage2_cuda/models/",
+	// 	"C:/Code/photon/renderer/sdlTest/sdlTest/stage2_cuda/models/");
+// 	// TODO(#2): this function will load the model stored in config.inputFile. Currently, the model
+// 	// is hardcoded (our model loading code is still in production).
+// 	
+// 	std::vector<Triangle> triangles; // = loadTriangles("models/dragon_vrip.ply", Material{ {0,1,1}, {0.8f, 0.8f, 0.8f}, 1.4f, 0x0000 });
+//
+// 	std::vector<MaterialInfo> materials(5);
+// 	materials[0] = { {
+// 		{ 1.f,1.f,1.f },
+// 		{ 0.f,0.f,0.f },
+// 		{ 0.f,0.f,0.f },
+// 		0.f,
+// 		1.f,
+//
+// 		true,
+// 		{}
+// 		}, "models/bricks.png"
+// 	};
+// 	materials[1] = { {
+// 		{ 1.f,1.f,1.f },
+// 		{ 0.f,0.f,0.f },
+// 		{ 0.f,0.f,0.f },
+// 		0.f,
+// 		1.f,
+//
+// 		true,
+// 		{}
+// 		}, "models/asphalt.png"
+// 	};
+// 	materials[2] = { {
+// 		{ 1.f,1.f,1.f },
+// 		{ 0.f,0.f,0.f },
+// 		{ 0.f,0.f,0.f },
+// 		0.f,
+// 		1.f,
+//
+// 		false,
+// 		{}
+// 		}
+// 	};
+// 	materials[3] = { {
+// 		{ 0.f,0.f,0.f },
+// 		{ 0.9f,0.9f,0.9f },
+// 		{ 0.f,0.f,0.f },
+// 		0.f,
+// 		1.f,
+//
+// 		false,
+// 		{}
+// 		}
+// 	};
+// 	materials[4] = { {
+// 		{ 0.f,0.f,0.f },
+// 		{ 0.0f,0.0f,0.0f },
+// 		{ 0.9f,0.9f,0.9f },
+// 		0.f,
+// 		1.6f,
+//
+// 		false,
+// 		{}
+// 		}
+// 	};
+// 	auto bricks = GPUTexture::fromPng("models/bricks.png");
+// 	auto asphalt = GPUTexture::fromPng("models/asphalt.png");
+//
+// 	Scene scene;
+//
+// 	Triangle2 t;
+//
+// 	// Back wall
+// 	t.a = { -1, 1, 1 };
+// 	t.b = { 1, 1, 1 };
+// 	t.c = { -1, -1, 1 };
+// 	t.materialIndex = 3;
+// 	auto tri = t.toTriangle();
+// 	tri.v0vt = make_float3(0.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+//
+// 	t.a = { 1, 1, 1 };
+// 	t.b = { 1, -1, 1 };
+// 	t.c = { -1, -1, 1 };
+// 	t.materialIndex = 3;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+// 	// Front wall
+// 	t.a = { -1, 1, -4 };
+// 	t.b = { 1, 1, -4 };
+// 	t.c = { -1, -1, -4 };
+// 	t.materialIndex = 0;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(0.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+// 	t.a = { 1, 1, -4 };
+// 	t.b = { 1, -1, -4 };
+// 	t.c = { -1, -1, -4 };
+// 	t.materialIndex = 0;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+// 	// Left wall
+// 	t.a = { -1, -1, 1 };
+// 	t.b = { -1, 1, 1 };
+// 	t.c = { -1, -1, -4 };
+// 	t.materialIndex = 0;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+// 	t.a = { -1, 1, 1 };
+// 	t.b = { -1, 1, -4 };
+// 	t.c = { -1, -1, -4 };
+// 	t.materialIndex = 0;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+//
+// 	// Right wall
+// 	t.a = { 1, -1, 1 };
+// 	t.b = { 1, 1, 1 };
+// 	t.c = { 1, -1, -4 };
+// 	t.materialIndex = 0;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+// 	t.a = { 1, 1, 1 };
+// 	t.b = { 1, 1, -4 };
+// 	t.c = { 1, -1, -4 };
+// 	t.materialIndex = 0;
+// 	triangles.push_back(t.toTriangle());
+//
+//
+// 	// Top wall
+// 	t.a = { -1, 1, 1 };
+// 	t.b = { 1, 1, 1 };
+// 	t.c = { -1, 1, -4 };
+// 	t.materialIndex = 2;
+// 	triangles.push_back(t.toTriangle());
+//
+//
+// 	t.a = { 1, 1, 1 };
+// 	t.b = { 1, 1, -4 };
+// 	t.c = { -1, 1, -4 };
+// 	t.materialIndex = 2;
+// 	triangles.push_back(t.toTriangle());
+//
+//
+// 	// Bottom wall
+// 	t.a = { -1, -1, 1 };
+// 	t.b = { 1, -1, 1 };
+// 	t.c = { -1, -1, -4 };
+// 	t.materialIndex = 1;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+//
+// 	t.a = { 1, -1, 1 };
+// 	t.b = { 1, -1, -4 };
+// 	t.c = { -1, -1, -4 };
+// 	t.materialIndex = 1;
+// 	tri = t.toTriangle();
+// 	tri.v0vt = make_float3(1.0f, 0.0f, 0.0f);
+// 	tri.v1vt = make_float3(1.0f, 1.0f, 0.0f);
+// 	tri.v2vt = make_float3(0.0f, 1.0f, 0.0f);
+// 	triangles.push_back(tri);
+//
+// //
+// //	// prism
+// //	t.a = { 0, 0.5, 0 }; // A
+// //	t.b = { 0, 0, 0.5 }; // B
+// //	t.c = { -0.5, 0, 0 }; // C
+// //	t.material = {
+// //		{ 1, 1, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// // TODO: add  triangles.push_back(t);
+// //	t.a = { 0, 0.5, 0 }; // A
+// //	t.b = { -0.5, 0, 0 }; // C
+// //	t.c = { 0, 0, -0.5 }; // D
+// //	t.material = {
+// //		{ 1, 0, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// //	t.a = { 0, 0.5, 0 }; // A
+// //	t.b = { 0, 0, -0.5 }; // D
+// //	t.c = { 0.5, 0, 0 }; // E
+// //	t.material = {
+// //		{ 0, 0, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// //	t.a = { 0, 0.5, 0 }; // A
+// //	t.b = { 0.5, 0, 0 }; // E
+// //	t.c = { 0, 0, 0.5 }; // B
+// //	t.material = {
+// //		{ 1, 0, 0 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// //
+// //
+// //	t.a = { 0, -0.5, 0 }; // F
+// //	t.b = { 0, 0, 0.5 }; // B
+// //	t.c = { -0.5, 0, 0 }; // C
+// //	t.material = {
+// //		{ 1, 0, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// //	t.a = { 0, -0.5, 0 }; // F
+// //	t.b = { -0.5, 0, 0 }; // C
+// //	t.c = { 0, 0, -0.5 }; // D
+// //	t.material = {
+// //		{ 1, 0, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// //	t.a = { 0, -0.5, 0 }; // F
+// //	t.b = { 0, 0, -0.5 }; // D
+// //	t.c = { 0.5, 0, 0 }; // E
+// //	t.material = {
+// //		{ 1, 0, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+// //	t.a = { 0, -0.5, 0 }; // F
+// //	t.b = { 0.5, 0, 0 }; // E
+// //	t.c = { 0, 0, 0.5 }; // B
+// //	t.material = {
+// //		{ 1, 0, 1 }, // color
+// //		{ 0.8f, 0.8f, 0.8f }, // reflectivity
+// //		2.5,  // refractive index (diamond)
+// //		0x0002 // type
+// //	};
+//
+// 	scene.spheres.emplace_back();
+// 	scene.spheres[scene.spheres.size() - 1] = {
+// 		{ -0.5f, 0.3f, 0 }, 0.2f,
+// 		{
+// 			{ 0.0f, 0.0f, 0.0f }, // diffuse
+// 			{ 0.89f, 0.89f, 0.89f }, // specular
+// 			{ 0.0f, 0.0f, 0.f }, // transmission
+// 			1.0f,  // shininess
+// 			2.5f,  // refractive index (diamond)
+// 			false
+// 		}
+// 	};
+// 	// scene.spheres.emplace_back();
+// 	// scene.spheres[scene.spheres.size() - 1] = {
+// 	// 	{ 0, -0.3f, 0 }, 0.2f,
+// 	// 	{
+// 	// 		{ 0.0f, 0.0f, 0.0f }, // diffuse
+// 	// 		{ 0.0f, 0.0f, 0.0f }, // specular
+// 	// 		{ 0.9f, 0.9f, 0.9f }, // transmission
+// 	// 		1.0f,  // shininess
+// 	// 		1.7f,  // refractive index (diamond)
+// 	// 		false
+// 	// 	}
+// 	// };
+// 	scene.spheres.emplace_back();
+// 	scene.spheres[scene.spheres.size() - 1] = {
+// 		{ 0.5f, 0.3f, 0 }, 0.2f,
+// 		{
+// 			{ 0.0f, 0.0f, 0.0f }, // diffuse
+// 			{ 0.89f, 0.89f, 0.89f }, // specular
+// 			{ 0.f, 0.f, 0.f }, // transmission
+// 			1.0f,  // shininess
+// 			2.5f,  // refractive index (diamond)
+// 			false
+// 		},
+// 	};
+// 	scene.triangleData = std::move(*buildBVH(std::move(triangles))->toRaw());
+//
+// 	scene.lights.push_back(PointLightSource{
+// 		{0, 0.8f, 0},
+// 		{1, 1, 1},
+// 		});
+//
+// 	scene.materials = std::move(materials);
+//
+// 	return scene;
 }
 
 float degToRadians(float a)
@@ -456,7 +434,7 @@ Renderer::Renderer(const RendererConfig& config)
 
 	// TODO(#2): The input file should specify information about camera. This will be hardcoded for
 	// now.
-	this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -1), make_float3(0, 0, 1),
+	this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -100), make_float3(0, 0, 1),
 		make_float3(0, 1, 0), degToRadians(config.horizontalFovDegrees),
 		((float) config.outputWidth) / config.outputHeight);
 }
@@ -567,7 +545,6 @@ void Renderer::cleanup()
 void Renderer::run()
 {
 	initGL();
-	loadModel();
 	loop();
 	cleanup();
 }

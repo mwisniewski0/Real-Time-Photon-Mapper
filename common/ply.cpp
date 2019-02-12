@@ -8,7 +8,7 @@ bool startsWith(const std::string& tested, const std::string& startswith)
     return (tested.substr(0, startswith.length()) == startswith);
 }
 
-std::vector<Triangle> loadTriangles(const std::string& path, Material m)
+std::vector<Triangle> loadTriangles(const std::string& path, unsigned materialIndex)
 {
     std::ifstream f(path);
 
@@ -59,7 +59,7 @@ std::vector<Triangle> loadTriangles(const std::string& path, Material m)
             throw std::runtime_error("Only triangular faces are supported");
         }
 
-        Triangle result = Triangle::from3Points(vertices[a], vertices[b], vertices[c], m);
+        Triangle result = Triangle::from3Points(vertices[a], vertices[b], vertices[c], materialIndex);
         output.push_back(result);
     }
 
