@@ -62,11 +62,12 @@ struct Material {
 	float3 diffuse;
 	float3 specular;
 	float3 transmittance;
-	float shininess;
-	bool useDiffuseTexture; // checks wether to multiply diffuse by the texture
+	float shininess; // This is currently ignored and assumed to be 1.0
+	float refractiveIndex;
+
+	bool useDiffuseTexture; // checks whether to multiply diffuse by the texture
 	GPUTexture diffuseTexture;
 };
-
 class Shape
 {
 public:
