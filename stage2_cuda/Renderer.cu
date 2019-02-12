@@ -102,6 +102,15 @@ Scene Renderer::loadModel()
 	auto scene = loadObj("C:\\Users\\m_wis\\Documents\\3dsMax\\export\\vonia\\vonia.obj",
 		"C:\\Users\\m_wis\\Documents\\3dsMax\\export\\vonia\\",
 		"");
+	// TODO:
+	scene.lights.push_back(PointLightSource{
+		{ 1.22f, 4.10f, -0.70f },
+		{ 0.52f, 0.52f, 0.62f }
+	});
+	scene.lights.push_back(PointLightSource{
+		{ 3.16f, 4.55f, -1.28f },
+		{ 0.62f, 0.52f, 0.52f }
+	});
 	return scene;
 	// auto file = std::ofstream("C:\\test\\shitsies.photon", std::ios_base::binary | std::ios_base::out);
 	// writeToStream(file, scene);
@@ -434,7 +443,7 @@ Renderer::Renderer(const RendererConfig& config)
 
 	// TODO(#2): The input file should specify information about camera. This will be hardcoded for
 	// now.
-	this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -100), make_float3(0, 0, 1),
+	this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -10), make_float3(0, 0, 1),
 		make_float3(0, 1, 0), degToRadians(config.horizontalFovDegrees),
 		((float) config.outputWidth) / config.outputHeight);
 }

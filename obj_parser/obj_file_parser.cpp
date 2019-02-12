@@ -67,7 +67,7 @@ void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyob
 void construct_material(MaterialInfo* material_dst, tinyobj::material_t *material_src, std::string *texture_base_path) {
 	material_dst->material.diffuse = make_float3(1);// material_src->diffuse[0], material_src->diffuse[1], material_src->diffuse[2]);
     material_dst->material.specular = make_float3(material_src->specular[0], material_src->specular[1], material_src->specular[2]);
-    material_dst->material.transmittance = make_float3(material_src->transmittance[0], material_src->transmittance[1], material_src->transmittance[2]);
+    material_dst->material.transmittance = (1.0f - material_src->dissolve) * make_float3(material_src->transmittance[0], material_src->transmittance[1], material_src->transmittance[2]);
     material_dst->material.shininess = material_src->shininess;
     material_dst->material.refractiveIndex = material_src->ior;
 
@@ -95,7 +95,7 @@ Triangle create_triangle(tinyobj::index_t v0_index, tinyobj::index_t v1_index, t
 		triangle_verts[2] / 600.f, material_index);
 
     float3 triangle_vert_texcoords[3];
-    build_texcoords(triangle_vert_texcoords, v0_index, v1_index, v2_index, &(attrib->vertices));
+    build_texcoords(triangle_vert_texcoords, v0_index, v1_index, v2_index, &(attrib->texcoords));
 
     new_triangle.v0vt = triangle_vert_texcoords[0];
     new_triangle.v1vt = triangle_vert_texcoords[1];
@@ -162,12 +162,6 @@ Scene loadObj(const std::string& objPath, const std::string& mtlBaseDir, const s
 		result.materials.push_back(m);
 
 	}
-
-	// TODO:
-	result.lights.push_back(PointLightSource{
-		{0.f, 0.f, 0.f},
-		{1.f, 1.f, 1.f}
-	});
 
 	return result;
 }

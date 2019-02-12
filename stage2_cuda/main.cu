@@ -7,8 +7,8 @@ int main(int argc, char* argv[])
 	// try {
 		// TODO(#4): This should come from flags
 		RendererConfig config;
-		config.outputHeight = 600;
-		config.outputWidth = 800;
+		config.outputHeight = 300;
+		config.outputWidth = 400;
 		config.fragShaderPath = "./tracer.frag";
 		config.vtxShaderPath = "./tracer.vert";
 		config.windowTitle = "Photon";
