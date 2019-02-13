@@ -1,6 +1,16 @@
 ## Electron front end
 This directory contains all of the code for the electron photon running files. the directory structure for this directory is mapped as follows
 
+### Build and deployment
+Build and deployment information can be found in the readme at the root of this project. Typical builds for development can be performed using 
+basic npm commands.
+
+to build use
+```
+npm start
+```
+
+
 ```
 photon-project-root/
 |
