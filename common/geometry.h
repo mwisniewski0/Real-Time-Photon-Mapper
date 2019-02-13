@@ -142,7 +142,6 @@ struct Triangle : public Shape {
 	float3 v1vn;
 	float3 v2vn;
 
-
 	// Moller-Trumbore algorithm for triangle-ray intersection. Returns < 0 if no intersection
 	// occurred. If intersection occured the result will be the distance of the intersection point
 	// to the ray origin

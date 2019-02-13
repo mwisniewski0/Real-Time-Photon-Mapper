@@ -88,9 +88,21 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 		result->material = scene.materials.contents[intersectedTriangle->materialIndex];
 		result->color = result->material.diffuse;
 
+
+
+		auto bary = absoluteToBarycentric(*intersectedTriangle, result->pointOfHit);
+
+		// printf("%f, %f, %f | %f, %f, %f | %f, %f, %f\n",
+		// 	intersectedTriangle->v0vn.x, intersectedTriangle->v0vn.y, intersectedTriangle->v0vn.z,
+		// 	intersectedTriangle->v1vn.x, intersectedTriangle->v1vn.y, intersectedTriangle->v1vn.z,
+		// 	intersectedTriangle->v2vn.x, intersectedTriangle->v2vn.y, intersectedTriangle->v2vn.z);
+
+		result->normal = applyBarycentric(bary, intersectedTriangle->v0vn,
+			intersectedTriangle->v1vn, intersectedTriangle->v2vn);
+
 		if (result->material.useDiffuseTexture)
 		{
-			auto bary = absoluteToBarycentric(*intersectedTriangle, result->pointOfHit);
+
 			float3 texel = applyBarycentric(bary, intersectedTriangle->v0vt,
 				intersectedTriangle->v1vt, intersectedTriangle->v2vt);
 			result->color *= result->material.diffuseTexture.getTexelColor(texel.x, texel.y);
@@ -108,6 +120,43 @@ __device__ bool castRay(const Ray& ray, const SceneInfo& scene, RayHit*  result)
 				*result = tempResult;
 				result->color = result->material.diffuse;
 			}
+		}
+	}
+
+	return closestHitDistance < 1e19;
+}
+
+__device__ bool castRayNoSpheres(const Ray& ray, const SceneInfo& scene, RayHit*  result) {
+	float closestHitDistance = 1e20;  // Infinity
+									  // printf("%f %f %f, %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z, ray.dir.x, ray.dir.y, ray.dir.z);
+
+	RayHit tempResult;
+	auto intersectedTriangle = scene.triangleBvh.intersectRay(ray, closestHitDistance);
+	if (intersectedTriangle != nullptr)
+	{
+		result->pointOfHit = ray.pointAtDistance(closestHitDistance);
+		result->normal = getNormalAwayFromRay(ray, *intersectedTriangle);
+		result->material = scene.materials.contents[intersectedTriangle->materialIndex];
+		result->color = result->material.diffuse;
+
+
+
+		auto bary = absoluteToBarycentric(*intersectedTriangle, result->pointOfHit);
+
+		// printf("%f, %f, %f | %f, %f, %f | %f, %f, %f\n",
+		// 	intersectedTriangle->v0vn.x, intersectedTriangle->v0vn.y, intersectedTriangle->v0vn.z,
+		// 	intersectedTriangle->v1vn.x, intersectedTriangle->v1vn.y, intersectedTriangle->v1vn.z,
+		// 	intersectedTriangle->v2vn.x, intersectedTriangle->v2vn.y, intersectedTriangle->v2vn.z);
+
+		result->normal = applyBarycentric(bary, intersectedTriangle->v0vn,
+			intersectedTriangle->v1vn, intersectedTriangle->v2vn);
+
+		if (result->material.useDiffuseTexture)
+		{
+
+			float3 texel = applyBarycentric(bary, intersectedTriangle->v0vt,
+				intersectedTriangle->v1vt, intersectedTriangle->v2vt);
+			result->color *= result->material.diffuseTexture.getTexelColor(texel.x, texel.y);
 		}
 	}
 
@@ -162,7 +211,7 @@ __device__ float3 getHitIllumination(const SceneInfo& scene, const RayHit& hit) 
 		float3 vectorToLight = scene.lights.contents[i].position - hit.pointOfHit;
 
 		RayHit hitTowardsLight;
-		bool lightReached = !castRay(
+		bool lightReached = !castRayNoSpheres(
 			Ray::fromPoints(hit.pointOfHit + (hit.normal * EPSILON), scene.lights.contents[i].position),
 			scene, &hitTowardsLight);
 		lightReached =
@@ -218,7 +267,7 @@ __device__ float calculateReflectRatio(float n1, float n2, const float3& normal,
 
 
 __device__ float3 getRayColor(const SceneInfo& scene, Ray ray) {
-	const int MAX_RAY_BOUNCE = 15;
+	const int MAX_RAY_BOUNCE = 10;
 
 	RaySplit rays[MAX_RAY_BOUNCE];
 	rays[0] = { ray, 1.0f, 1.0f, 1.0f };

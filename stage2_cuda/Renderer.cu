@@ -111,6 +111,21 @@ Scene Renderer::loadModel()
 		{ 3.16f, 4.55f, -1.28f },
 		{ 0.62f, 0.52f, 0.52f }
 	});
+
+	scene.spheres.push_back(Sphere{
+		{0.207f, 1.656f, -3.006f},
+		0.2f,
+		{
+			{ 0.0f,0.0f,0.0f },
+			{ 0.0f,0.0f,0.0f },
+			{ 0.9f, 0.9f, 0.9f },
+			1.0f,
+			1.6f,
+			false,
+			{}
+		}
+	});
+
 	return scene;
 	// auto file = std::ofstream("C:\\test\\shitsies.photon", std::ios_base::binary | std::ios_base::out);
 	// writeToStream(file, scene);
@@ -443,9 +458,14 @@ Renderer::Renderer(const RendererConfig& config)
 
 	// TODO(#2): The input file should specify information about camera. This will be hardcoded for
 	// now.
-	this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -10), make_float3(0, 0, 1),
-		make_float3(0, 1, 0), degToRadians(config.horizontalFovDegrees),
-		((float) config.outputWidth) / config.outputHeight);
+	// this->camera = Camera::fromHorizontalFov(make_float3(0, 0, -10), make_float3(0, 0, 1),
+	// 	make_float3(0, 1, 0), degToRadians(config.horizontalFovDegrees),
+	// 	((float)config.outputWidth) / config.outputHeight);
+
+
+	this->camera = Camera::fromHorizontalFov(make_float3(1.369, 3.40, -0.40), make_float3(1.37, -3.52, -8.94),
+		make_float3(8.609e-05, 0.7772, -0.6296), degToRadians(config.horizontalFovDegrees),
+		((float)config.outputWidth) / config.outputHeight);
 }
 
 void Renderer::renderFrame()

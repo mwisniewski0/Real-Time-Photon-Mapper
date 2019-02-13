@@ -73,18 +73,18 @@ void build_normals(float3 *triangle_normals, tinyobj::index_t v0_index, tinyobj:
 	triangle_normals[0] = make_float3(v0vn0, v0vn1, v0vn2);
 
 
-	float v1vn0 = normals->at((3 * v0_index.normal_index));
-	float v1vn1 = normals->at((3 * v0_index.normal_index) + 1);
-	float v1vn2 = normals->at((3 * v0_index.normal_index) + 2);
+	float v1vn0 = normals->at((3 * v1_index.normal_index));
+	float v1vn1 = normals->at((3 * v1_index.normal_index) + 1);
+	float v1vn2 = normals->at((3 * v1_index.normal_index) + 2);
 
-	triangle_normals[0] = make_float3(v1vn0, v1vn1, v1vn2);
+	triangle_normals[1] = make_float3(v1vn0, v1vn1, v1vn2);
 
 
-	float v2vn0 = normals->at((3 * v0_index.normal_index));
-	float v2vn1 = normals->at((3 * v0_index.normal_index) + 1);
-	float v2vn2 = normals->at((3 * v0_index.normal_index) + 2);
+	float v2vn0 = normals->at((3 * v2_index.normal_index));
+	float v2vn1 = normals->at((3 * v2_index.normal_index) + 1);
+	float v2vn2 = normals->at((3 * v2_index.normal_index) + 2);
 
-	triangle_normals[0] = make_float3(v2vn0, v2vn1, v2vn2);
+	triangle_normals[2] = make_float3(v2vn0, v2vn1, v2vn2);
 
 
 }
