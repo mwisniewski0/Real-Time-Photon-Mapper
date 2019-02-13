@@ -17,6 +17,9 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^4.0.3"
+    "electron": "^4.0.4"
+  },
+  "dependencies": {
+    "electron-installer-dmg": "^2.0.0"
   }
 }
