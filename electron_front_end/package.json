@@ -1,25 +1,10 @@
 {
-  "name": "electron-quick-start",
+  "name": "real-time-photon-mapper",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "A front end interface for interacting with the real time photon mapping project",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
-  "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
-  ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
-  "devDependencies": {
-    "electron": "^4.0.4"
-  },
-  "dependencies": {
-    "electron-installer-dmg": "^2.0.0"
-  }
+  "homepage": "https://github.com/mwisniewski0/Real-Time-Photon-Mapper/edit/master/README.md"
 }

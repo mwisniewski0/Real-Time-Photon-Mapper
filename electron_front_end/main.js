@@ -1,3 +1,5 @@
+// electron-packager
+
 // Modules to control application life and create native browser window
 const electron = require('electron');
 
