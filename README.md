@@ -47,3 +47,22 @@ npm start
 
 ### Deployment
 we use the [electron packager]https://github.com/electron-userland/electron-packager node in order to build the front end application for deployment. To use, migrate to the electron_front_end directory and use the instructions listed on their repo to install and deploy.
+
+## Hardware requirements
+
+### Stage 1
+
+* NVidia GPU with compute capability >= 2.0
+* At least 6 GB of VRAM
+* At least 8 GB of RAM
+
+### Stage 2
+
+* NVidia GPU with compute capability >= 2.0
+* At least 2 GB of VRAM
+* At least 8 GB of RAM
+
+## Contributors' notes
+
+* Please browse this project's open issues to find a specific piece of the software to work on.
+* Each section of the program contains a more specific readme which explains the section in more detail.
