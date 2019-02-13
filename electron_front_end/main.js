@@ -19,7 +19,7 @@ function createWindow () {
 
 ipcMain.on('file:find', (e, item) => {
     const files = dialog.showOpenDialog(mainWindow, {properties: ['openFile']});
-    if (files[0]) {
+    if (files) {
         if (files[0].slice(-7) == ".photon") {
             if (process.platform == 'darwin') {
                 cp.exec("open " + files[0]);
