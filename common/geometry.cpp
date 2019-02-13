@@ -1,6 +1,9 @@
 #include "geometry.h"
 #include <vector>
 
+/*
+ * Builds bounding box contailing all triangles.
+ */
 BoundingBox Triangle::boundingBoxForMany(const std::vector<Triangle>& triangles)
 {
 	BoundingBox result;
@@ -11,6 +14,9 @@ BoundingBox Triangle::boundingBoxForMany(const std::vector<Triangle>& triangles)
 	return result;
 }
 
+/*
+ * Expands bounding box to contain other.
+ */
 BoundingBox BoundingBox::merge(const BoundingBox& other) const
 {
 	BoundingBox result;
@@ -19,6 +25,9 @@ BoundingBox BoundingBox::merge(const BoundingBox& other) const
 	return result;
 }
 
+/*
+ * Expands bounding box to contain v.
+ */
 BoundingBox BoundingBox::merge(const float3& v) const
 {
 	BoundingBox result;
@@ -27,11 +36,17 @@ BoundingBox BoundingBox::merge(const float3& v) const
 	return result;
 }
 
+/*
+ * Returns surface area of bounding box
+ */
 float BoundingBox::getArea()
 {
 	return dot((maxCoords - minCoords), (maxCoords - minCoords));
 }
 
+/*
+ * Creates a material with a png texture. 
+ */
 Material MaterialInfo::loadWithTexture() const
 {
 	Material result = material;
@@ -70,6 +85,9 @@ MaterialInfo readFromStream<MaterialInfo>(std::istream& s)
 	return result;
 }
 
+/*
+ * Create a new triangle from three vertices and a material.
+ */
 Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, unsigned materialIndex)
 {
 	Triangle result;
@@ -86,17 +104,26 @@ Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, unsigned materia
 	return result;
 }
 
+/*
+ * Get bounding box containing triangle
+ */
 BoundingBox Triangle::getBoundingBox() const
 {
 	BoundingBox result;
 	return result.merge(v0).merge(v0 + v0v1).merge(v0 + v0v2);
 }
 
+/*
+ * Calculate triangle surface area.
+ */
 float Triangle::approxSurfaceArea() const
 {
 	return length(cross((v0v1), (v0v2))) * 0.5;
 }
 
+/*
+ * return the center of the triangle
+ */
 float3 Triangle::center() const
 {
 	return (3 * v0 + v0v1 + v0v2) / 3.f;

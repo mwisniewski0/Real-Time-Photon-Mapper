@@ -17,25 +17,34 @@ __device__ const float AIR_REFRACTIVE_INDEX = 1;
 __device__ unsigned xpix = 0;
 __device__ unsigned ypix = 0;
 
-
+/*
+ * Returns ray from camera through pixel on screen
+ */
 __device__ Ray getCameraRay(const CudaCamera& cam, float screenX, float screenY) {
 	float3 pointOnScreen = (cam.screenBottomRight - cam.screenBottomLeft) * screenX +
 		(cam.screenTopLeft - cam.screenBottomLeft) * screenY + cam.screenBottomLeft;
 	return Ray::fromPoints(cam.eyePos, pointOnScreen);
 }
 
+/*
+ * Flip the normal if it in the wrong direction
+ */
 __device__ float3 getNormalAwayFromRay(Ray ray, Triangle t) {
 	// Avoiding branching - this will flip the sign of the normal if the normal forms an obtuse
 	// angle with the direction of the ray
 	return normalize(t.normal*dot(t.normal, -ray.dir));
 }
 
+/*
+ * information obout ray intersection
+ */
 struct RayHit {
 	float3 pointOfHit;
 	float3 normal;  // Unit vector
 	Material material;
 	float3 color;
 };
+
 
 __device__ bool intersectRayAndSphere(const Ray& ray, const Sphere& s, RayHit* hit)
 {

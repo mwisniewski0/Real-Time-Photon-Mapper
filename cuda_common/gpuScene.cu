@@ -1,6 +1,8 @@
 #include "gpuScene.h"
 
-
+/*
+ * Copies scene from cpu to gpu
+ */
 SceneInfo SceneInfo::fromScene(const Scene& scene)
 {
 	SceneInfo result;

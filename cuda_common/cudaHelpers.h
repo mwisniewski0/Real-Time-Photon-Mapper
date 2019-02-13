@@ -5,6 +5,9 @@
 
 #define CUDA_CHECK(call) { checkCudaError((call), __FILE__, __LINE__); }
 
+/*
+ * Check a cuda error code. If there is an error, print it and exit program.
+ */
 inline void checkCudaError(cudaError_t code, bool abort = false)
 {
 	if (code != cudaSuccess)
@@ -14,6 +17,9 @@ inline void checkCudaError(cudaError_t code, bool abort = false)
 	}
 }
 
+/*
+ * std::vector doesn't work well with cuda. So here is our own simple implenetation that does work.
+ */
 template <typename T>
 struct GPUVector
 {
@@ -31,6 +37,9 @@ struct GPUVector
     }
 };
 
+/*
+ * Converts a vector on the cpu into a vector on the gpu.
+ */
 template <typename T>
 GPUVector<T> vectorToGpu(const std::vector<T>& v)
 {

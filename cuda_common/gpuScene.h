@@ -4,6 +4,9 @@
 #include "../common/scene.h"
 #include "../cuda_common/gpuBvh.h"
 
+/*
+ * Keeps track of geometry and materials on the gpu.
+ */
 struct SceneInfo
 {
 	GPUVector<Sphere> spheres;

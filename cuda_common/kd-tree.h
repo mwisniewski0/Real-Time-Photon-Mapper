@@ -7,6 +7,9 @@
 #include "../common/cutil_math.h"
 #include "../common/photon.h"
 
+/*
+ * Node in tree data structure
+ */
 struct Node{
     Photon* photon;
     std::unique_ptr<Node> left;

@@ -3,12 +3,18 @@
 #include "../cuda_common/cudaHelpers.h"
 #include "../external/lodepng.h"
 
+/*
+ * Stores a texture on the gpu.
+ */
 struct GPUTexture
 {
 	GPUVector<unsigned char> colors;
 	unsigned width;
 	unsigned height;
 
+    /*
+     * Returns the color of the pixel in column x and row y of image.
+     */
 	__device__ float3 getPixelColor(const unsigned& x, const unsigned& y)
 	{
 		float3 result;
@@ -18,6 +24,9 @@ struct GPUTexture
 		return result;
 	}
 
+    /*
+     * x and y are in [0,1]. Returns color at coresponding location.
+     */
 	__device__ float3 getTexelColor(const float& x, const float& y)
 	{
 

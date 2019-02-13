@@ -1,5 +1,8 @@
 #include "gpuTextures.h"
 
+/*
+ * Creates a texture from a png image and copies data to gpu.
+ */
 GPUTexture GPUTexture::fromPng(const std::string& path)
 {
 	std::vector<unsigned char> image; //the raw pixels

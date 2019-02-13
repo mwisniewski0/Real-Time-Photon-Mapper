@@ -2,16 +2,25 @@
 #include "Transform3d.h"
 #include <memory>
 
+/*
+ * Returns a vector in the direction camera is pointing.
+ */
 float3 Camera::vectorToScreen() const
 {
 	return this->lookingAt - this->position;
 }
 
+/*
+ * recalculates x-axis in camera space
+ */
 void Camera::refreshRightDir()
 {
 	this->rightDir = normalize(cross(this->vectorToScreen(), this->upDir));
 }
 
+/*
+ * initializes a camera at a certain point, with a certain orientation and frames of view
+ */
 Camera::Camera(float3 position, float3 lookingAt, float3 upDir, float horizontalFov, float verticalFov)
 {
 	this->position = position;
@@ -23,6 +32,9 @@ Camera::Camera(float3 position, float3 lookingAt, float3 upDir, float horizontal
 	refreshRightDir();
 }
 
+/*
+ * Same as regular contrstuctor but calculates vertical frame of view from aspect ratio.
+ */
 std::unique_ptr<Camera> Camera::fromHorizontalFov(float3 position, float3 lookingAt,
 	float3 upDir, float horizontalFov,
 	float aspectRatio)
@@ -33,6 +45,10 @@ std::unique_ptr<Camera> Camera::fromHorizontalFov(float3 position, float3 lookin
 	return std::make_unique<Camera>(position, lookingAt, upDir, horizontalFov, verticalFov);
 }
 
+/*
+ * DO NOT DELETE. VERY IMPORTANT
+ * converts float3 to float3
+ */
 float3 toFloat3(const float3& vec)
 {
 	float3 res;
@@ -42,6 +58,9 @@ float3 toFloat3(const float3& vec)
 	return res;
 }
 
+/*
+ * Turns a cpu camera into a gpu camera
+ */
 CudaCamera Camera::getCudaInfo() const
 {
 	CudaCamera result;
@@ -59,42 +78,39 @@ CudaCamera Camera::getCudaInfo() const
 	return result;
 }
 
+/*
+ * Functions for moveing camera.
+ */
 void Camera::moveForward(float delta)
 {
 	auto displacement = normalize(lookingAt - position) * delta;
 	position += displacement;
 	lookingAt += displacement;
 }
-
 void Camera::moveBackward(float delta)
 {
 	moveForward(-delta);
 }
-
 void Camera::moveLeft(float delta)
 {
 	moveRight(-delta);
 }
-
 void Camera::moveRight(float delta)
 {
 	auto displacement = this->rightDir * delta;
 	position += displacement;
 	lookingAt += displacement;
 }
-
 void Camera::turnLeft(float rad)
 {
 	turnRight(-rad);
 }
-
 void Camera::turnRight(float rad)
 {
 	lookingAt =
 		Transform3D::rotateCCWAroundAxis(position, position + upDir, rad).transform(lookingAt);
 	refreshRightDir();
 }
-
 void Camera::turnUp(float rad)
 {
 	lookingAt =
@@ -103,24 +119,20 @@ void Camera::turnUp(float rad)
 		Transform3D::rotateCCWAroundAxis(make_float3(0), rightDir, rad).transform(upDir);
 	refreshRightDir();
 }
-
 void Camera::turnDown(float rad)
 {
 	turnUp(-rad);
 }
-
 void Camera::tiltLeft(float rad)
 {
 	tiltRight(-rad);
 }
-
 void Camera::tiltRight(float rad)
 {
 	upDir =
 		Transform3D::rotateCCWAroundAxis(make_float3(0), vectorToScreen(), rad).transform(upDir);
 	refreshRightDir();
 }
-
 void Camera::absTurnRight(float rad)
 {
 	auto transform = Transform3D::rotateCCWAroundAxis(position, position + make_float3(0, 1, 0), rad);
@@ -129,7 +141,6 @@ void Camera::absTurnRight(float rad)
 	upDir = temp - lookingAt;
 	refreshRightDir();
 }
-
 void Camera::absTurnUp(float rad)
 {
 	turnUp(rad);

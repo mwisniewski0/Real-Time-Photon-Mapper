@@ -23,6 +23,10 @@
 
 enum ScatterType {DIFFUSE, SPECULAR, ABSORBED};
 
+/*
+ * Triangle2 and createScene are very temporary in order to hgave a simple scene to do photon tracing.
+ * Delete these and use obj_parser when it is done
+ */
 struct Triangle2
 {
 	float3 a, b, c;
@@ -190,7 +194,9 @@ SceneInfo createScene(){
 	return SceneInfo::fromScene(scene);
 }
 
-//trace photons and return array in photonList
+/*
+ * CUDA kernel to trace photons. Geometry is defined by scene and output is stored in photonList.
+ */
 __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList) {
 	uint idx = blockIdx.x*blockDim.x + threadIdx.x; //gpu thread index
 
@@ -282,6 +288,10 @@ __global__ void getPhotonsKernel(SceneInfo scene, Photon* photonList) {
 
 }
 
+/*
+ * Simple functon to get some idea of if photon tracing is working correctly. Simply projects all
+ * photons in photons to the screen. Also clips to [-1,1]^3. Saves a .ppm image to filename.
+ */
 void writeTestToFile(std::vector<Photon> photons, std::string filename) {
 	std::vector<int> sums(3 * WIDTH*HEIGHT);
 	for (Photon photon : photons) {

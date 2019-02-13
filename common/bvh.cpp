@@ -8,6 +8,10 @@ enum Axis
 	AxisX, AxisY, AxisZ
 };
 
+/*
+ * Calculates the huristic for splitting the current list of triangle on particular axis in a particular
+ * location.
+ */
 float getSplitCost(const std::vector<Triangle>& shapes, Axis splitAxis, float splitPosition)
 {
 	float leftArea = 0.0f;
@@ -61,7 +65,9 @@ struct BBoxTemp {
 	{}
 };
 
-
+/*
+ * Recursively builds bvh splitting based on surface area and number of triangles huristic.
+ */
 std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	if (working.size() < 4) { // if only 4 triangles left
 		auto leaf = std::make_unique<BVHLeaf>();
@@ -215,6 +221,9 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	return inner;
 }
 
+/*
+ * Builds a bvh from a list of triangles.
+ */
 std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles)
 {
 	std::vector<BBoxTemp> working;
@@ -250,6 +259,10 @@ std::unique_ptr<BVHNode> buildBVH(std::vector<Triangle>&& triangles)
 	return root;
 }
 
+/*
+ * These are to help read/write the bvh from/to the .photon file so it doesn't have to be reconstructed
+ * in stage 2.
+ */
 template<>
 void writeToStream<GpuBvhNode>(std::ostream &s, const GpuBvhNode &v) {
 	writeToStream(s, v.max);
@@ -308,6 +321,10 @@ std::string GpuBvhNode::toString()
 	return s.str();
 }
 
+/*
+ * This function takes the tree bvh and converts it into a contiguous chunck of memory that can be 
+ * copied to the GPU. It also makes each node 32 bytes which is the size of a cache line.
+ */
 void makeGpuBvhInternal(const BVHNode* node, BVHGpuDataRaw* data)
 {
 	data->bvhNodes.emplace_back();
