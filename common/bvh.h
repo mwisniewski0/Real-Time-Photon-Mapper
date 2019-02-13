@@ -8,8 +8,6 @@
 #include <ostream>
 #include "streamWriter.h"
 
-extern int triCount;
-
 // Representation of BVH nodes for GPUs. This is exactly 32 bytes which is the size of an L2 cache
 // line.
 struct GpuBvhNode {
@@ -48,6 +46,8 @@ struct GpuBvhNode {
 	}
 
 	void setBoundingBox(BoundingBox box);
+
+	__host__ std::string toString();
 };
 
 struct BVHGpuDataRaw

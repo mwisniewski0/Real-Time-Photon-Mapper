@@ -5,6 +5,7 @@
 #include <chrono>
 #include "../common/cutil_math.h"
 #include "streamWriter.h"
+#include <sstream>
 
 #ifdef NO_CUDA
 #include "gpuTexturesNoCuda.h"
@@ -74,6 +75,17 @@ struct MaterialInfo {
 	std::string diffuseTexturePath;
 
 	Material loadWithTexture() const;
+	__host__ std::string toString()
+	{
+		std::stringstream s;
+		s << "(Diffuse: " << float3ToString(material.diffuse) << ", ";
+		s << "Specular: " << float3ToString(material.specular) << ", ";
+		s << "Transmittance: " << float3ToString(material.transmittance) << ", ";
+		s << "Shininess: " << material.shininess << ", ";
+		s << "Refractive Index: " << material.refractiveIndex << ", ";
+		s << "Diffuse texture: " << diffuseTexturePath << ")";
+		return s.str();
+	}
 };
 
 template<>
@@ -174,6 +186,24 @@ struct Triangle : public Shape {
 	BoundingBox getBoundingBox() const override;
 	float approxSurfaceArea() const override;
 	float3 center() const override;
+
+
+	__host__ std::string toString()
+	{
+		std::stringstream s;
+		s << "(v0: " << float3ToString(v0) << ", ";
+		s << "v1: " << float3ToString(v0 + v0v1) << ", ";
+		s << "v2: " << float3ToString(v0 + v0v2) << ", ";
+		s << "v0vt: " << float3ToString(v0vt) << ", ";
+		s << "v1vt: " << float3ToString(v1vt) << ", ";
+		s << "v2vt: " << float3ToString(v2vt) << ", ";
+		s << "v0vn: " << float3ToString(v0vn) << ", ";
+		s << "v1vn: " << float3ToString(v1vn) << ", ";
+		s << "v2vn: " << float3ToString(v2vn) << ", ";
+		s << "normal: " << float3ToString(normal) << ", ";
+		s << "material index: " << materialIndex << ")";
+		return s.str();
+	}
 };
 
 template<>

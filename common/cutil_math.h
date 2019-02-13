@@ -27,6 +27,9 @@
 #define M_PI   3.14159265358979323846264338327950288
 #endif
 
+#include <string>
+#include <sstream>
+
 typedef unsigned int uint;
 typedef unsigned short ushort;
 
@@ -1596,4 +1599,11 @@ inline __host__ __device__ float minf(float a, float b) {
 }
 inline __host__ __device__ float maxf(float a, float b) {
 	return a < b ? b : a;
+}
+
+inline __host__ std::string float3ToString(const float3& v)
+{
+	std::stringstream os;
+	os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+	return os.str();
 }

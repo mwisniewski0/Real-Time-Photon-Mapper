@@ -78,6 +78,11 @@ Triangle Triangle::from3Points(float3 v1, float3 v2, float3 v3, unsigned materia
 	result.v0v2 = v3 - v1;
 	result.materialIndex = materialIndex;
 	result.normal = normalize(cross(result.v0v1, result.v0v2));
+
+	result.v0vn = result.normal;
+	result.v1vn = result.normal;
+	result.v2vn = result.normal;
+
 	return result;
 }
 
@@ -106,6 +111,9 @@ Triangle readFromStream<Triangle>(std::istream &s) {
 	v.v0vt = readFromStream<float3>(s);
 	v.v1vt = readFromStream<float3>(s);
 	v.v2vt = readFromStream<float3>(s);
+	v.v0vn = readFromStream<float3>(s);
+	v.v1vn = readFromStream<float3>(s);
+	v.v2vn = readFromStream<float3>(s);
 	v.normal = readFromStream<float3>(s);
 	v.materialIndex = readFromStream<unsigned>(s);
 	return v;
@@ -135,6 +143,9 @@ void writeToStream<Triangle>(std::ostream &s, const Triangle &v) {
 	writeToStream(s, v.v0vt);
 	writeToStream(s, v.v1vt);
 	writeToStream(s, v.v2vt);
+	writeToStream(s, v.v0vn);
+	writeToStream(s, v.v1vn);
+	writeToStream(s, v.v2vn);
 	writeToStream(s, v.normal);
 	writeToStream(s, v.materialIndex);
 }

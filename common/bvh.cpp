@@ -3,9 +3,6 @@
 
 const float inf = std::numeric_limits<float>().infinity();
 
-int triCount = 0;
-int doneCount = 0;
-
 enum Axis
 {
 	AxisX, AxisY, AxisZ
@@ -67,8 +64,6 @@ struct BBoxTemp {
 
 std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	if (working.size() < 4) { // if only 4 triangles left
-		doneCount += working.size();
-		printf("%d\\%d\n", doneCount, triCount);
 		auto leaf = std::make_unique<BVHLeaf>();
 		for (int i = 0; i< working.size(); ++i)
 			leaf->triangles.push_back(working[i].triangle);
@@ -175,8 +170,6 @@ std::unique_ptr<BVHNode> recurse(std::vector<BBoxTemp> working, int depth = 0) {
 	}
 	// if no split is better, just add a leaf node
 	if (best_axis == -1) {
-		doneCount += working.size();
-		printf("%d\\%d\n", doneCount, triCount);
 		auto leaf = std::make_unique<BVHLeaf>();
 		for (int i = 0; i< working.size(); ++i)
 			leaf->triangles.push_back(working[i].triangle);
@@ -293,6 +286,26 @@ void GpuBvhNode::setBoundingBox(BoundingBox box)
 {
 	min = box.minCoords;
 	max = box.maxCoords;
+}
+
+std::string GpuBvhNode::toString()
+{
+	std::stringstream s;
+	s << "(min: " << float3ToString(min) << ", ";
+	s << "max: " << float3ToString(max) << ", ";
+
+	if (isLeaf())
+	{
+		s << "count: " << getCount() << ", ";
+		s << "offset: " << u.leaf.offset << ")";
+	}
+	else
+	{
+		s << "left: " << u.inner.left << ", ";
+		s << "right: " << u.inner.right << ")";
+	}
+
+	return s.str();
 }
 
 void makeGpuBvhInternal(const BVHNode* node, BVHGpuDataRaw* data)

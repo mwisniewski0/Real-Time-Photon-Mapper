@@ -5,8 +5,6 @@ GPUTexture GPUTexture::fromPng(const std::string& path)
 	std::vector<unsigned char> image; //the raw pixels
 	unsigned width, height;
 
-	printf(path.c_str());
-	printf("\nLine");
 	unsigned error = lodepng::decode(image, width, height, path.c_str());
 
 	if (error)

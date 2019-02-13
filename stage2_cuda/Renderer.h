@@ -16,8 +16,6 @@
 struct RendererConfig
 {
 	std::string inputFile;
-	std::string vtxShaderPath;
-	std::string fragShaderPath;
 	std::string windowTitle;
 	int outputWidth;
 	int outputHeight;
@@ -50,7 +48,6 @@ class Renderer
 
 	SDL_Window* mainWindow;
 	SDL_GLContext mainContext;
-	GLuint glProgramId;
 
 	std::unique_ptr<Camera> camera;
 	UserMovementInfo userInputState;

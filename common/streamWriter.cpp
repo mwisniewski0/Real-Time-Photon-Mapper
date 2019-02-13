@@ -20,9 +20,9 @@ void writeToStream<float3>(std::ostream& s, const float3& v) {
 template <>
 std::string readFromStream<std::string>(std::istream& s) {
 	unsigned length = readFromStream<unsigned>(s);
-	char* buffer = new char[length];
+	char* buffer = new char[length + 1];
 	s.read(buffer, length);
-	std::string result = buffer;
+	std::string result(buffer, length);
 	delete[] buffer;
 	return result;
 }

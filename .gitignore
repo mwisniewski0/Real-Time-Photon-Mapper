@@ -1,14 +1,14 @@
 # Visual studio
 Debug
 x64
-*.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
 .vs
 .localhistory
-*.sln
 *.sln.DotSettings.user
 .pdb
+
+deps
 
 sam
 
