@@ -94,7 +94,33 @@ struct Triangle2
 Scene Renderer::loadModel()
 {
 	auto file = std::ifstream(config.inputFile, std::ios_base::binary | std::ios_base::in);
-	return readFromStream<Scene>(file);
+	auto scene = readFromStream<Scene>(file);
+
+	// TODO: temporary add light sources and refractive sphere
+	scene.lights.push_back(PointLightSource{
+		{ 1.22f, 4.10f, -0.70f },
+		{ 0.52f, 0.52f, 0.62f }
+	});
+	scene.lights.push_back(PointLightSource{
+		{ 3.16f, 4.55f, -1.28f },
+		{ 0.62f, 0.52f, 0.52f }
+	});
+
+	scene.spheres.push_back(Sphere{
+		{ 0.207f, 1.656f, -3.006f },
+		0.2f,
+		{
+			{ 0.0f,0.0f,0.0f },
+			{ 0.0f,0.0f,0.0f },
+			{ 0.9f, 0.9f, 0.9f },
+			1.0f,
+			1.6f,
+			false,
+			{}
+		}
+	});
+
+	return scene;
 }
 
 float degToRadians(float a)

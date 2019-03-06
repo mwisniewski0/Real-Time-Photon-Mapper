@@ -9,7 +9,12 @@
 #include <stdio.h>
 #include <iostream>
 #include "../common/scene.h"
+
+#ifdef _MSC_VER
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 
 
 void build_texcoords(float3 *vertex_texcoords, tinyobj::index_t v0_index, tinyobj::index_t v1_index,

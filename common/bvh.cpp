@@ -295,7 +295,7 @@ GpuBvhNode readFromStream<GpuBvhNode>(std::istream &s) {
 	return v;
 }
 
-void GpuBvhNode::setBoundingBox(BoundingBox box)
+void GpuBvhNode::setBoundingBox(const BoundingBox& box)
 {
 	min = box.minCoords;
 	max = box.maxCoords;

@@ -6,5 +6,8 @@
   "scripts": {
     "start": "electron ."
   },
-  "homepage": "https://github.com/mwisniewski0/Real-Time-Photon-Mapper/edit/master/README.md"
+  "homepage": "https://github.com/mwisniewski0/Real-Time-Photon-Mapper/edit/master/README.md",
+  "dependencies": {
+    "electron": "^4.0.6"
+  }
 }

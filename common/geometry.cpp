@@ -116,7 +116,7 @@ BoundingBox Triangle::getBoundingBox() const
 /*
  * Calculate triangle surface area.
  */
-float Triangle::approxSurfaceArea() const
+float Triangle::surfaceArea() const
 {
 	return length(cross((v0v1), (v0v2))) * 0.5;
 }

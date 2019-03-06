@@ -25,19 +25,12 @@ struct GPUTexture
 	}
 
     /*
-     * x and y are in [0,1]. Returns color at coresponding location.
+     * Returns color at corresponding texel (x and y range from 0 to 1).
      */
 	__device__ float3 getTexelColor(const float& x, const float& y)
-	{
-
-		// unsigned x_i = __float2uint_rn(x * width);
-		// unsigned y_i = __float2uint_rn(y * height);
-		
+	{		
 		unsigned x_i = unsigned(x * width);
 		unsigned y_i = unsigned(y * height);
-
-		// printf("%d %d, %d, %d\n", x_i, y_i, 4 * (x_i + y_i * width), colors.size);
-		// return make_float3(0.0f, 0.0f, 0.0f);
 
 		if (x_i >= width)
 		{
@@ -55,5 +48,6 @@ struct GPUTexture
 		return result;
 	}
 
+	// Builds a texture using the PNG located at the provided file path.
 	static GPUTexture fromPng(const std::string& path);
 };

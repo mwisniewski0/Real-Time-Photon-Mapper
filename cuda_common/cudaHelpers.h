@@ -1,4 +1,7 @@
 #pragma once
+
+// This file defines various helpers used throughout Photon's CUDA code
+
 #include <stdexcept>
 #include <cuda_runtime.h>
 #include <vector>
@@ -18,7 +21,7 @@ inline void checkCudaError(cudaError_t code, bool abort = false)
 }
 
 /*
- * std::vector doesn't work well with cuda. So here is our own simple implenetation that does work.
+ * std::vector doesn't work well with cuda. So here is our own simple implemetation that does work.
  */
 template <typename T>
 struct GPUVector

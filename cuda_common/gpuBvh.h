@@ -1,19 +1,20 @@
 #pragma once
 
+// Defines the BVH structure for triangles as needed for the GPU.
+
 #include "../common/bvh.h"
 #include "../cuda_common/cudaHelpers.h"
 
-/*
- * Keeps track of triangles and intersects bvh.
- */
+// The GPU representation of the BVH. See bvh.h and BvhRawData for more information
 struct BVHGpuData
 {
 	GPUVector<GpuBvhNode> bvhNodes;
 	GPUVector<Triangle> triangles;
     
     /*
-     * Uses the BVH to intersect a ray and the triangles. Returns the intersected triangle if there is 
-     * one. Otherwise return nullptr. Because of the BVH this should be something like average O(logn)
+     * Uses the BVH to intersect a ray and the triangles. Returns the intersected triangle if there
+     * is one. Otherwise return nullptr. Because of the BVH this should result in average complexity
+     * of O(logn).
      */
 	__host__ __device__ Triangle* intersectRay(const Ray& ray, float& out_distanceFromRayOrigin) const
 	{
@@ -66,4 +67,5 @@ struct BVHGpuData
 	void release();
 };
 
+// Constructs a GPU BVH from the given CPU BVH.
 BVHGpuData makeGpuBvh(const BVHNode* root);

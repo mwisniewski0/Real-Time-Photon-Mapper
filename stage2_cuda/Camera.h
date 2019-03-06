@@ -5,6 +5,7 @@
 #include "../common/cutil_math.h"
 #include <cuda_runtime_api.h>
 
+// Represents 
 struct CudaCamera
 {
 	float3 screenTopLeft;

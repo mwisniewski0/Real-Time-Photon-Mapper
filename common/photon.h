@@ -3,9 +3,10 @@
 
 #include "../common/cutil_math.h"
 
+// Represents a single photon when running photon-tracing.
 struct Photon{
     float3 pos;
-    float3 power;
+	float3 power;
 };
 
 #endif

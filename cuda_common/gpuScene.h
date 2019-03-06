@@ -14,8 +14,9 @@ struct SceneInfo
 	GPUVector<Material> materials;
 	BVHGpuData triangleBvh;
 
+	// Builds a GPU scene from the provided CPU scene
 	static SceneInfo fromScene(const Scene& scene);
 };
 
-
+// Converts the provided raw BVH data to a GPU compatible structure.
 BVHGpuData rawBVHToGpu(const BVHGpuDataRaw& data);

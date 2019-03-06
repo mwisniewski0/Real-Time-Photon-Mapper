@@ -1,6 +1,10 @@
 #include <iostream>
 #include <string>
+#ifdef _MSC_VER
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 #include "../common/obj_file_parser.h"
 #include "../external/cxxopts.hpp"
 #include <fstream>
