@@ -14,6 +14,7 @@ namespace glhelp {
 	 */
 	GLuint createShaderProgram(const std::string& vtxShader, const std::string& fragShader);
 
+	// Draws a square centered at point (x1, y1) with the side of length sidelength
 	void drawSquare(double x1, double y1, double sidelength);
 }
 

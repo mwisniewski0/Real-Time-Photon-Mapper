@@ -64,6 +64,7 @@ struct BVHGpuData
 		return result;
 	}
 
+	// Releases the GPU resources held by the BVH
 	void release();
 };
 

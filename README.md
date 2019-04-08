@@ -66,3 +66,51 @@ we use the [electron packager]https://github.com/electron-userland/electron-pack
 
 * Please browse this project's open issues to find a specific piece of the software to work on.
 * Each section of the program contains a more specific readme which explains the section in more detail.
+
+## How to use Photon?
+
+The general Photon workflow is divided into a few steps. First, an appropriate `.obj` file (together with its `.mtl` file and texture files) needs to be located. Such files can be created by most modern 3D-modeling software such as Blender, SketchUp or Autodesk 3DS Max.
+
+Once you localize your `.obj` model, it is ready to be processed into a `.photon` file by the first stage of Photon. Localize your stage1 executable as built in the *How to build* section above. Stage1 is a command-line program with the following interface:
+
+```
+stage1 [FLAGS]
+
+-i, --input arg   Path to the obj file. Note that .mtl files and texture
+                  files are expected to be in the same directory
+-o, --output arg  Path to the output photon file
+    --help        Print help
+
+```
+
+For example, if one wants to create a `.photon` file from an `.obj` file located at: `C:\Users\user\model\model.obj` and save it to `C:\Users\user\photon\model.photon`, one should run:
+
+```.\stage1.exe --input=C:\Users\user\model\model.obj --output=C:\Users\user\photon\model.photon```
+
+Should the output flag be omitted, the `.photon` file will be written in the current working directory.
+
+After producing your `.photon` file, it is ready for real time rendering using the stage2 of Photon. Stage2 has to be started through a command-line interface (or through the electron frontend described in sections above):
+
+```
+  stage2 [FLAGS]
+
+  -w, --width arg   Width of the output window (default: 400)
+  -h, --height arg  Height of the output window (default: 300)
+  -f, --hfov arg    Horizontal field of view in degrees (default: 40.0)
+  -i, --input arg   Path to the photon file
+      --help        Print help
+```
+
+For example, if one was to render a `.photon` file located at `C:\Users\user\photon\model.photon`, one should run:
+
+```.\stage2.exe -i C:\Users\user\photon\model.photon```
+
+Afterwards, a real-time render window will open. The user can interact with it by:
+
+* Moving the mouse to turn the camera
+* Use WASD keys to walk around the scene: W - to move forward, A - to move left, S - to move backward, D - to move right
+
+Note, that you can change the parameters of the render window using the flags explained above. For example, to start a window in 1080p with 55 degrees of horizontal field of view, one would run:
+
+```.\stage2.exe -i C:\Users\user\photon\model.photon -w 1920 -h 1080 -f 55```
+`
